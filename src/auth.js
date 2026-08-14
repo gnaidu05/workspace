@@ -28,7 +28,7 @@ function publicUser(user) {
 }
 
 // Express middleware: require a valid token (cookie or Authorization header).
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const bearer = header.startsWith('Bearer ') ? header.slice(7) : null;
   const token = req.cookies?.token || bearer;
@@ -37,7 +37,7 @@ function requireAuth(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, config.jwtSecret);
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(payload.sub);
+    const user = await db.get('SELECT * FROM users WHERE id = ?', [payload.sub]);
     if (!user) return res.status(401).json({ error: 'Invalid session' });
     req.user = user;
     next();

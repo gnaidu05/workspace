@@ -1,116 +1,155 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const express = require('express');
 const db = require('../db');
-const config = require('../config');
+const storage = require('../storage');
 const { requireAuth } = require('../auth');
 
 const router = express.Router();
 router.use(requireAuth);
 
-// Confirm a folder belongs to the user (or is the null root). Returns true/false.
-function folderIsAccessible(userId, folderId) {
+const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+// Confirm a folder belongs to the user (or is the null root).
+async function folderIsAccessible(userId, folderId) {
   if (folderId === null || folderId === undefined) return true;
-  const folder = db
-    .prepare('SELECT id FROM folders WHERE id = ? AND user_id = ?')
-    .get(folderId, userId);
+  const folder = await db.get('SELECT id FROM folders WHERE id = ? AND user_id = ?', [folderId, userId]);
   return Boolean(folder);
 }
 
 // GET /api/folders?parent_id=... -> list subfolders of a parent (root when omitted)
-router.get('/', (req, res) => {
-  const parentId = req.query.parent_id ? parseInt(req.query.parent_id, 10) : null;
-  if (!folderIsAccessible(req.user.id, parentId)) {
-    return res.status(404).json({ error: 'Folder not found' });
-  }
-  const rows = db
-    .prepare(
+router.get(
+  '/',
+  wrap(async (req, res) => {
+    const parentId = req.query.parent_id ? parseInt(req.query.parent_id, 10) : null;
+    if (!(await folderIsAccessible(req.user.id, parentId))) {
+      return res.status(404).json({ error: 'Folder not found' });
+    }
+    const rows = await db.all(
       `SELECT id, name, parent_id, created_at
          FROM folders
         WHERE user_id = ? AND parent_id IS ?
-        ORDER BY name COLLATE NOCASE`
-    )
-    .all(req.user.id, parentId);
-  res.json({ folders: rows });
-});
+        ORDER BY name COLLATE NOCASE`,
+      [req.user.id, parentId]
+    );
+    res.json({ folders: rows });
+  })
+);
 
 // GET /api/folders/:id/breadcrumb -> ancestor chain for navigation
-router.get('/:id/breadcrumb', (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const chain = [];
-  let current = db
-    .prepare('SELECT id, name, parent_id FROM folders WHERE id = ? AND user_id = ?')
-    .get(id, req.user.id);
-  if (!current) return res.status(404).json({ error: 'Folder not found' });
-  while (current) {
-    chain.unshift({ id: current.id, name: current.name });
-    current = current.parent_id
-      ? db
-          .prepare('SELECT id, name, parent_id FROM folders WHERE id = ? AND user_id = ?')
-          .get(current.parent_id, req.user.id)
-      : null;
-  }
-  res.json({ breadcrumb: chain });
-});
+router.get(
+  '/:id/breadcrumb',
+  wrap(async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const chain = [];
+    let current = await db.get('SELECT id, name, parent_id FROM folders WHERE id = ? AND user_id = ?', [
+      id,
+      req.user.id,
+    ]);
+    if (!current) return res.status(404).json({ error: 'Folder not found' });
+    while (current) {
+      chain.unshift({ id: current.id, name: current.name });
+      current = current.parent_id
+        ? await db.get('SELECT id, name, parent_id FROM folders WHERE id = ? AND user_id = ?', [
+            current.parent_id,
+            req.user.id,
+          ])
+        : null;
+    }
+    res.json({ breadcrumb: chain });
+  })
+);
 
 // POST /api/folders  { name, parent_id? }
-router.post('/', (req, res) => {
-  const { name, parent_id } = req.body || {};
-  if (!name || !String(name).trim()) {
-    return res.status(400).json({ error: 'Folder name is required' });
-  }
-  const parentId = parent_id ? parseInt(parent_id, 10) : null;
-  if (!folderIsAccessible(req.user.id, parentId)) {
-    return res.status(404).json({ error: 'Parent folder not found' });
-  }
-  const info = db
-    .prepare('INSERT INTO folders (user_id, parent_id, name) VALUES (?, ?, ?)')
-    .run(req.user.id, parentId, String(name).trim());
-  const folder = db.prepare('SELECT id, name, parent_id, created_at FROM folders WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json({ folder });
-});
+router.post(
+  '/',
+  wrap(async (req, res) => {
+    const { name, parent_id } = req.body || {};
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: 'Folder name is required' });
+    }
+    const parentId = parent_id ? parseInt(parent_id, 10) : null;
+    if (!(await folderIsAccessible(req.user.id, parentId))) {
+      return res.status(404).json({ error: 'Parent folder not found' });
+    }
+    const info = await db.run('INSERT INTO folders (user_id, parent_id, name) VALUES (?, ?, ?)', [
+      req.user.id,
+      parentId,
+      String(name).trim(),
+    ]);
+    const folder = await db.get('SELECT id, name, parent_id, created_at FROM folders WHERE id = ?', [
+      info.lastInsertRowid,
+    ]);
+    res.status(201).json({ folder });
+  })
+);
 
 // PATCH /api/folders/:id  { name }  -> rename
-router.patch('/:id', (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const { name } = req.body || {};
-  if (!name || !String(name).trim()) {
-    return res.status(400).json({ error: 'Folder name is required' });
-  }
-  const result = db
-    .prepare('UPDATE folders SET name = ? WHERE id = ? AND user_id = ?')
-    .run(String(name).trim(), id, req.user.id);
-  if (result.changes === 0) return res.status(404).json({ error: 'Folder not found' });
-  res.json({ ok: true });
-});
+router.patch(
+  '/:id',
+  wrap(async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const { name } = req.body || {};
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: 'Folder name is required' });
+    }
+    const result = await db.run('UPDATE folders SET name = ? WHERE id = ? AND user_id = ?', [
+      String(name).trim(),
+      id,
+      req.user.id,
+    ]);
+    if (result.rowsAffected === 0) return res.status(404).json({ error: 'Folder not found' });
+    res.json({ ok: true });
+  })
+);
 
-// DELETE /api/folders/:id  -> cascades to subfolders and files
-router.delete('/:id', (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const folder = db.prepare('SELECT id FROM folders WHERE id = ? AND user_id = ?').get(id, req.user.id);
-  if (!folder) return res.status(404).json({ error: 'Folder not found' });
+// DELETE /api/folders/:id  -> removes the folder, its descendants, and their files
+router.delete(
+  '/:id',
+  wrap(async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const folder = await db.get('SELECT id FROM folders WHERE id = ? AND user_id = ?', [id, req.user.id]);
+    if (!folder) return res.status(404).json({ error: 'Folder not found' });
 
-  // Collect stored files in this folder and all descendants so we can remove
-  // them from disk (the DB rows are removed by ON DELETE CASCADE).
-  const doomedFiles = db
-    .prepare(
-      `WITH RECURSIVE tree(id) AS (
-         SELECT ?
-         UNION ALL
-         SELECT f.id FROM folders f JOIN tree t ON f.parent_id = t.id
-       )
-       SELECT stored_name FROM files WHERE folder_id IN (SELECT id FROM tree) AND user_id = ?`
-    )
-    .all(id, req.user.id);
+    // Collect this folder and all descendants (portable recursion, no CTE).
+    const ids = [id];
+    let frontier = [id];
+    while (frontier.length) {
+      const placeholders = frontier.map(() => '?').join(',');
+      const children = await db.all(
+        `SELECT id FROM folders WHERE user_id = ? AND parent_id IN (${placeholders})`,
+        [req.user.id, ...frontier]
+      );
+      const childIds = children.map((c) => c.id);
+      ids.push(...childIds);
+      frontier = childIds;
+    }
 
-  db.prepare('DELETE FROM folders WHERE id = ? AND user_id = ?').run(id, req.user.id);
-
-  for (const { stored_name } of doomedFiles) {
-    fs.rm(path.join(config.uploadDir, stored_name), { force: true }, () => {});
-  }
-  res.json({ ok: true });
-});
+    // Remove stored file objects, then rows (folder delete cascades in the DB).
+    const placeholders = ids.map(() => '?').join(',');
+    const files = await db.all(
+      `SELECT storage_key, storage_url FROM files WHERE user_id = ? AND folder_id IN (${placeholders})`,
+      [req.user.id, ...ids]
+    );
+    for (const f of files) {
+      try {
+        await storage.remove(f.storage_key, f.storage_url);
+      } catch {
+        /* best-effort cleanup */
+      }
+    }
+    // Delete rows explicitly (don't depend on FK cascade being enforced on the
+    // remote connection).
+    await db.run(`DELETE FROM files WHERE user_id = ? AND folder_id IN (${placeholders})`, [
+      req.user.id,
+      ...ids,
+    ]);
+    await db.run(`DELETE FROM folders WHERE user_id = ? AND id IN (${placeholders})`, [
+      req.user.id,
+      ...ids,
+    ]);
+    res.json({ ok: true });
+  })
+);
 
 module.exports = { router, folderIsAccessible };

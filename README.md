@@ -89,7 +89,30 @@ same image deploys to **Fly.io** (`fly launch` detects the Dockerfile; add a
 volume mounted at `/data`), **Railway**, Google Cloud Run, Kubernetes, or any
 VPS with Docker.
 
-### Option C — bare Node on a VPS
+### Option C — Vercel (serverless)
+
+Vercel runs serverless functions with no persistent local disk, so the app uses
+**Turso** (serverless libSQL) for the database and **Vercel Blob** for files.
+`vercel.json` routes every request into `api/index.js` (the Express app).
+
+1. **Create a Turso database** and grab its URL + token:
+   ```bash
+   turso db create nimbus
+   turso db show --url nimbus          # -> TURSO_DATABASE_URL
+   turso db tokens create nimbus       # -> TURSO_AUTH_TOKEN
+   ```
+2. **Import the repo** into Vercel (New Project → import `gnaidu05/workspace`).
+3. In the project, add a **Blob store** (Storage → Blob) — Vercel injects
+   `BLOB_READ_WRITE_TOKEN` automatically.
+4. Add environment variables: `JWT_SECRET` (a long random string),
+   `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`. `NODE_ENV` is `production` on Vercel
+   by default.
+5. **Deploy.** The schema is created automatically on the first request.
+
+The same code still runs locally (`npm start`) against a SQLite file and local
+disk — the Turso/Blob backends switch on only when their env vars are present.
+
+### Option D — bare Node on a VPS
 
 ```bash
 npm ci
@@ -107,10 +130,18 @@ HTTPS.
 | Layer     | Choice                                             |
 | --------- | -------------------------------------------------- |
 | Runtime   | Node.js + Express                                  |
-| Database  | SQLite (`better-sqlite3`)                           |
+| Database  | libSQL / SQLite (`@libsql/client`) — local file or Turso |
 | Auth      | `bcryptjs` password hashing, `jsonwebtoken` sessions |
-| Uploads   | `multer` (disk storage)                            |
+| Uploads   | `multer` (in memory) → local disk **or** Vercel Blob |
 | Frontend  | Vanilla HTML / CSS / JS (no build step)            |
+
+The storage layer adapts to its host automatically:
+
+- **Database** — uses a local SQLite file by default; if `TURSO_DATABASE_URL`
+  is set it talks to [Turso](https://turso.tech) (serverless libSQL) instead.
+- **Files** — stored on local disk by default; if `BLOB_READ_WRITE_TOKEN` is set
+  (or when running on Vercel) they go to Vercel Blob. Downloads always stream
+  through the authenticated endpoint, so files stay scoped to their owner.
 
 ## Getting started
 
