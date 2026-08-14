@@ -26,11 +26,11 @@ There are two ways to run Drive as a live site:
    and persists to IndexedDB. Open the file directly, or host the `docs/` folder
    anywhere static — including **GitHub Pages**:
 
-   > This repo already ships a **GitHub Actions workflow**
+   > This repo ships a **GitHub Actions workflow**
    > (`.github/workflows/deploy-pages.yml`) that publishes `docs/` to Pages on
-   > every push. Enable it once under **Settings → Pages → Build and deployment
-   > → Source: GitHub Actions**; after that, each push deploys automatically and
-   > the live URL shows up in the workflow run's summary.
+   > every push. It enables Pages itself (`configure-pages` with
+   > `enablement: true`), so no manual repo setting is required — the live URL
+   > appears in the workflow run's summary and under **Settings → Pages**.
 
    Because it has no server, data lives only in the visitor's own browser — great
    for a demo or personal use, and nothing ever leaves the device.
