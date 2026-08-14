@@ -1,0 +1,1206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nimbus Drive</title>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --surface-2: #eef0f6;
+    --border: #e3e6ef;
+    --text: #1a2030;
+    --muted: #626c80;
+    --faint: #97a0b2;
+    --accent: #4263eb;
+    --accent-weak: #e7ecfd;
+    --accent-strong: #3550c8;
+    --star: #e0a100;
+    --danger: #e03131;
+    --danger-weak: #fce8e8;
+    --good: #2f9e44;
+    --shadow-sm: 0 1px 2px rgba(20, 28, 50, 0.06);
+    --shadow-md: 0 1px 2px rgba(20, 28, 50, 0.06), 0 6px 20px rgba(20, 28, 50, 0.08);
+    --shadow-lg: 0 12px 40px rgba(20, 28, 50, 0.18);
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  :root:not([data-theme="light"]) {
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1218;
+      --surface: #171b24;
+      --surface-2: #222735;
+      --border: #272d3a;
+      --text: #e7eaf2;
+      --muted: #8b94a7;
+      --faint: #6b7488;
+      --accent: #5c7cfa;
+      --accent-weak: #1d2540;
+      --accent-strong: #748ffc;
+      --star: #f5b942;
+      --danger: #ff6b6b;
+      --danger-weak: #3a2222;
+      --good: #51cf66;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f1218;
+    --surface: #171b24;
+    --surface-2: #222735;
+    --border: #272d3a;
+    --text: #e7eaf2;
+    --muted: #8b94a7;
+    --faint: #6b7488;
+    --accent: #5c7cfa;
+    --accent-weak: #1d2540;
+    --accent-strong: #748ffc;
+    --star: #f5b942;
+    --danger: #ff6b6b;
+    --danger-weak: #3a2222;
+    --good: #51cf66;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  button { font: inherit; cursor: pointer; color: inherit; }
+  input { font: inherit; }
+  a { color: inherit; }
+  [hidden] { display: none !important; }
+
+  /* ---------- Brand ---------- */
+  .brand { display: inline-flex; align-items: center; gap: 10px; user-select: none; }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(150deg, var(--accent), var(--accent-strong));
+    color: #fff; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(66, 99, 235, 0.35);
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .brand-name { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
+  .brand-name .accent { color: var(--accent); }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid transparent; border-radius: 999px;
+    padding: 10px 18px; font-weight: 550; font-size: 14px;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-strong); }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
+  .btn-ghost:hover { background: var(--surface-2); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { filter: brightness(0.94); }
+  .btn svg { width: 16px; height: 16px; }
+  .btn-block { width: 100%; }
+
+  .icon-btn {
+    border: none; background: transparent; border-radius: 8px;
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--muted); transition: background .15s ease, color .15s ease;
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .icon-btn.is-star.active { color: var(--star); }
+
+  /* ---------- Auth ---------- */
+  .auth-screen {
+    min-height: 100%;
+    display: grid; grid-template-columns: 1fr;
+    place-items: center;
+    padding: 32px 20px;
+    background:
+      radial-gradient(1100px 520px at 15% -10%, var(--accent-weak), transparent 60%),
+      radial-gradient(900px 500px at 100% 110%, var(--accent-weak), transparent 55%),
+      var(--bg);
+  }
+  .auth-card {
+    width: 100%; max-width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-md);
+    padding: 36px 34px 30px;
+  }
+  .auth-card .brand { margin-bottom: 22px; }
+  .auth-title { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; margin: 0 0 4px; }
+  .auth-sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
+  .field label { font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted); }
+  .field input {
+    padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); color: var(--text); font-size: 15px; transition: border-color .15s, box-shadow .15s;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+  .auth-error {
+    background: var(--danger-weak); color: var(--danger);
+    border-radius: 10px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 16px;
+  }
+  .auth-switch { margin-top: 18px; text-align: center; font-size: 13.5px; color: var(--muted); }
+  .auth-switch button { border: none; background: none; color: var(--accent); font-weight: 600; padding: 0; }
+  .auth-switch button:hover { text-decoration: underline; }
+  .auth-note { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--faint); text-align: center; line-height: 1.5; }
+
+  /* ---------- App shell ---------- */
+  .app { min-height: 100%; display: flex; flex-direction: column; }
+  .topbar {
+    display: flex; align-items: center; gap: 20px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .search { flex: 1; max-width: 620px; position: relative; }
+  .search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
+  .search input {
+    width: 100%; padding: 11px 14px 11px 42px;
+    border: 1px solid transparent; border-radius: 11px;
+    background: var(--surface-2); color: var(--text); font-size: 14.5px;
+    transition: background .15s, border-color .15s, box-shadow .15s;
+  }
+  .search input:focus { outline: none; background: var(--surface); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+  .topbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(150deg, var(--accent), var(--accent-strong));
+    color: #fff; font-weight: 650; font-size: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; flex-shrink: 0;
+  }
+  .menu-wrap { position: relative; }
+  .menu {
+    position: absolute; right: 0; top: calc(100% + 8px);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow-lg); min-width: 220px; padding: 8px; z-index: 40;
+  }
+  .menu-head { padding: 8px 10px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+  .menu-head .n { font-weight: 600; font-size: 14px; }
+  .menu-head .e { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
+  .menu-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 9px 10px; border: none; background: none; border-radius: 8px;
+    font-size: 14px; text-align: left; color: var(--text);
+  }
+  .menu-item:hover { background: var(--surface-2); }
+  .menu-item svg { width: 16px; height: 16px; color: var(--muted); }
+
+  .body { display: flex; flex: 1; min-height: 0; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar {
+    width: 236px; flex-shrink: 0;
+    padding: 18px 14px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .new-btn {
+    box-shadow: var(--shadow-sm);
+    padding: 12px 20px; margin-bottom: 10px;
+  }
+  .nav { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 13px;
+    padding: 9px 14px; border: none; background: none; border-radius: 999px;
+    font-size: 14px; font-weight: 500; text-align: left; color: var(--text); width: 100%;
+  }
+  .nav-item svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
+  .nav-item:hover { background: var(--surface-2); }
+  .nav-item.active { background: var(--accent-weak); color: var(--accent-strong); font-weight: 600; }
+  .nav-item.active svg { color: var(--accent); }
+
+  .storage { margin-top: auto; padding: 14px; }
+  .storage-top { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  .storage-top svg { width: 16px; height: 16px; }
+  .meter { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .meter-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-strong)); transition: width .4s ease; }
+  .storage-label { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .storage-label b { color: var(--text); font-weight: 600; font-family: var(--font-mono); }
+
+  /* ---------- Main ---------- */
+  .main { flex: 1; min-width: 0; padding: 22px 26px 40px; overflow-y: auto; }
+  .crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 22px; letter-spacing: -0.02em; margin-bottom: 20px; min-height: 34px; }
+  .crumbs .crumb { border: none; background: none; padding: 2px 4px; border-radius: 6px; font-size: inherit; letter-spacing: inherit; font-weight: 600; color: var(--muted); }
+  .crumbs .crumb:hover { background: var(--surface-2); color: var(--text); }
+  .crumbs .crumb.current { color: var(--text); }
+  .crumbs .sep { color: var(--faint); font-size: 18px; }
+
+  .section-label {
+    font-size: 12px; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); margin: 6px 0 12px;
+  }
+  .section + .section { margin-top: 26px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 13px; }
+
+  .card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 15px;
+    display: flex; align-items: center; gap: 12px;
+    transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+    cursor: pointer; user-select: none;
+  }
+  .card:hover { box-shadow: var(--shadow-md); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+  .card.dragover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+  .card.dragging { opacity: 0.45; }
+  .card-thumb {
+    width: 40px; height: 40px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); overflow: hidden;
+  }
+  .card-thumb svg { width: 21px; height: 21px; }
+  .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .card-body { min-width: 0; flex: 1; }
+  .card-name { font-size: 14px; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: var(--font-mono); }
+  .card-star { position: absolute; top: 10px; right: 40px; color: var(--star); opacity: 0; }
+  .card-star.on { opacity: 1; }
+  .card-star svg { width: 15px; height: 15px; }
+  .card-menu-btn { position: absolute; top: 9px; right: 9px; opacity: 0; }
+  .card:hover .card-menu-btn, .card:focus-within .card-menu-btn { opacity: 1; }
+  .card-menu-btn.pinned { opacity: 1; }
+
+  .empty {
+    text-align: center; padding: 70px 20px; color: var(--muted);
+    border: 2px dashed var(--border); border-radius: var(--radius); margin-top: 8px;
+  }
+  .empty-icon { width: 56px; height: 56px; margin: 0 auto 14px; color: var(--faint); }
+  .empty h3 { margin: 0 0 6px; color: var(--text); font-weight: 600; font-size: 16px; }
+  .empty p { margin: 0; font-size: 14px; }
+
+  .main.dropping::after {
+    content: "Drop files to upload";
+    position: fixed; inset: 61px 0 0 236px; z-index: 30;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 600; color: var(--accent-strong);
+    background: color-mix(in srgb, var(--accent-weak) 88%, transparent);
+    border: 3px dashed var(--accent); border-radius: 0;
+    pointer-events: none;
+  }
+
+  /* ---------- Context menu ---------- */
+  .ctx {
+    position: fixed; z-index: 60;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow-lg); padding: 6px; min-width: 190px;
+  }
+  .ctx button {
+    display: flex; align-items: center; gap: 11px; width: 100%;
+    padding: 9px 11px; border: none; background: none; border-radius: 8px;
+    font-size: 14px; text-align: left; color: var(--text);
+  }
+  .ctx button:hover { background: var(--surface-2); }
+  .ctx button.danger { color: var(--danger); }
+  .ctx button.danger:hover { background: var(--danger-weak); }
+  .ctx button svg { width: 16px; height: 16px; color: var(--muted); }
+  .ctx button.danger svg { color: var(--danger); }
+  .ctx-sep { height: 1px; background: var(--border); margin: 5px 4px; }
+
+  /* ---------- Modal ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(15, 18, 24, 0.55);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    backdrop-filter: blur(2px);
+  }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow-lg); width: 100%; max-width: 440px; padding: 26px;
+  }
+  .modal.preview { max-width: 720px; padding: 0; overflow: hidden; }
+  .modal h3 { margin: 0 0 16px; font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+  .modal .field input { width: 100%; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+  .preview-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+  .preview-head .card-thumb { width: 34px; height: 34px; }
+  .preview-head .t { min-width: 0; flex: 1; }
+  .preview-head .t .nm { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .preview-head .t .mt { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+  .preview-stage {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg); min-height: 260px; max-height: 65vh; overflow: auto; padding: 18px;
+  }
+  .preview-stage img { max-width: 100%; max-height: 60vh; border-radius: 8px; box-shadow: var(--shadow-md); }
+  .preview-stage pre {
+    margin: 0; width: 100%; white-space: pre-wrap; word-break: break-word;
+    font-family: var(--font-mono); font-size: 13px; color: var(--text); line-height: 1.6;
+  }
+  .preview-stage .no-preview { text-align: center; color: var(--muted); }
+  .preview-stage .no-preview svg { width: 52px; height: 52px; color: var(--faint); margin-bottom: 12px; }
+
+  /* ---------- Toast ---------- */
+  .toast-wrap { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast {
+    background: #202634; color: #fff; padding: 11px 18px; border-radius: 10px;
+    font-size: 13.5px; box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 10px;
+    animation: toast-in .2s ease;
+  }
+  .toast svg { width: 16px; height: 16px; color: var(--good); }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 760px) {
+    .sidebar { display: none; }
+    .main.dropping::after { inset: 61px 0 0 0; }
+    .main { padding: 18px 16px 40px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- SVG icon defs -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path fill="currentColor" d="M6.5 19a4.5 4.5 0 0 1-.53-8.97 5.5 5.5 0 0 1 10.72-1.2A4.25 4.25 0 0 1 17.5 19h-11Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m20 20-3.2-3.2M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.2h7A1.5 1.5 0 0 1 19 9.7V17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17V7.5Z"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" d="m12 3.5 2.6 5.27 5.82.85-4.21 4.1.99 5.8L12 16.77 6.8 19.5l.99-5.8-4.21-4.1 5.82-.85L12 3.5Z"/></symbol>
+    <symbol id="i-star-o" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="m12 4.2 2.5 5.05 5.57.81-4.03 3.93.95 5.55L12 16.9l-4.99 2.64.95-5.55-4.03-3.93 5.57-.81L12 4.2Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path fill="currentColor" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.2h7A1.5 1.5 0 0 1 19 9.7V17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17V7.5Z"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 16V5m0 0L8 9m4-4 4 4M5 19h14"/></symbol>
+    <symbol id="i-folder-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.2h7A1.5 1.5 0 0 1 19 9.7V17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17V7.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M11 13.5h4M13 11.5v4"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><path fill="currentColor" d="M12 7a1.6 1.6 0 1 0 0-3.2A1.6 1.6 0 0 0 12 7Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Zm0 6.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2Z"/></symbol>
+    <symbol id="i-rename" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L18.5 9.5a2 2 0 0 0-2.83-2.83L5 17.2 4 20Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7m-7 0 .8 11.1A1.5 1.5 0 0 0 9.3 19.5h5.4a1.5 1.5 0 0 0 1.5-1.4L17 7"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15M10 8l-4 4 4 4M6 12h10"/></symbol>
+    <symbol id="i-theme" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m0 14v2M5 12H3m18 0h-2M6 6 4.5 4.5M19.5 19.5 18 18M6 18l-1.5 1.5M19.5 4.5 18 6M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/></symbol>
+    <symbol id="i-img" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" d="M4 5.5h16v13H4z"/><circle cx="9" cy="10" r="1.6" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="m5 17 4.5-4.5 3 3L16 12l3 3.5"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20V3.5Z"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M14 3.5V8h4M9 13h6M9 16h6"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" d="M4 5h16v14H4z"/><path fill="none" stroke="currentColor" stroke-width="1.7" d="M8 5v14M16 5v14M4 9.5h4M16 9.5h4M4 14.5h4M16 14.5h4"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="16.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4 7h16v12H4zM4 7l1.5-3h13L20 7M10 11h4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7"/></symbol>
+    <symbol id="i-move" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.2h7A1.5 1.5 0 0 1 19 9.7V17a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17V7.5Z"/></symbol>
+  </defs>
+</svg>
+
+<script>
+"use strict";
+(function () {
+  const $root = document.getElementById("root");
+  const icon = (id, cls) => `<svg class="${cls || ""}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+
+  // ======================================================================
+  // Storage layer: IndexedDB with an in-memory fallback (same async API).
+  // ======================================================================
+  const STORES = ["users", "folders", "files"];
+  let db = null;
+  let memoryMode = false;
+  const mem = { users: new Map(), folders: new Map(), files: new Map() };
+
+  function openDB() {
+    return new Promise((resolve) => {
+      let req;
+      try {
+        req = indexedDB.open("nimbus-drive", 1);
+      } catch (e) {
+        memoryMode = true; return resolve();
+      }
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        STORES.forEach((s) => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: "id" }); });
+      };
+      req.onsuccess = () => { db = req.result; resolve(); };
+      req.onerror = () => { memoryMode = true; resolve(); };
+      // Some sandboxed contexts leave the request blocked/pending; fall back.
+      setTimeout(() => { if (!db && !memoryMode) { memoryMode = true; resolve(); } }, 1200);
+    });
+  }
+
+  function tx(store, mode) { return db.transaction(store, mode).objectStore(store); }
+  function wrap(req) { return new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); }
+
+  const store = {
+    async all(name) {
+      if (memoryMode) return [...mem[name].values()];
+      return wrap(tx(name, "readonly").getAll());
+    },
+    async get(name, key) {
+      if (memoryMode) return mem[name].get(key) || undefined;
+      return wrap(tx(name, "readonly").get(key));
+    },
+    async put(name, val) {
+      if (memoryMode) { mem[name].set(val.id, val); return val; }
+      await wrap(tx(name, "readwrite").put(val)); return val;
+    },
+    async del(name, key) {
+      if (memoryMode) { mem[name].delete(key); return; }
+      await wrap(tx(name, "readwrite").delete(key));
+    },
+  };
+
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+
+  // ======================================================================
+  // Auth
+  // ======================================================================
+  async function hashPassword(password, saltHex) {
+    const salt = saltHex || Array.from(crypto.getRandomValues(new Uint8Array(16))).map((b) => b.toString(16).padStart(2, "0")).join("");
+    let hash;
+    if (crypto.subtle) {
+      const data = new TextEncoder().encode(salt + " " + password);
+      const digest = await crypto.subtle.digest("SHA-256", data);
+      hash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+    } else {
+      // Non-secure-context fallback (demo only).
+      let h = 5381; const s = salt + password;
+      for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+      hash = "x" + h.toString(16);
+    }
+    return { salt, hash };
+  }
+
+  const SESSION_KEY = "nimbus-session";
+  const session = {
+    get: () => { try { return localStorage.getItem(SESSION_KEY); } catch { return sessionMem; } },
+    set: (v) => { try { localStorage.setItem(SESSION_KEY, v); } catch { sessionMem = v; } },
+    clear: () => { try { localStorage.removeItem(SESSION_KEY); } catch { sessionMem = null; } },
+  };
+  let sessionMem = null;
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  async function register({ name, email, password }) {
+    email = email.trim().toLowerCase();
+    if (!name.trim()) throw new Error("Please enter your name.");
+    if (!EMAIL_RE.test(email)) throw new Error("Please enter a valid email address.");
+    if (password.length < 8) throw new Error("Password must be at least 8 characters.");
+    const users = await store.all("users");
+    if (users.some((u) => u.email === email)) throw new Error("An account with that email already exists.");
+    const { salt, hash } = await hashPassword(password);
+    const user = { id: uid(), name: name.trim(), email, salt, hash, createdAt: Date.now() };
+    await store.put("users", user);
+    return user;
+  }
+
+  async function login({ email, password }) {
+    email = email.trim().toLowerCase();
+    const users = await store.all("users");
+    const user = users.find((u) => u.email === email);
+    if (!user) throw new Error("No account found with that email.");
+    const { hash } = await hashPassword(password, user.salt);
+    if (hash !== user.hash) throw new Error("Incorrect password.");
+    return user;
+  }
+
+  async function currentUser() {
+    const id = session.get();
+    if (!id) return null;
+    return (await store.get("users", id)) || null;
+  }
+
+  // ======================================================================
+  // File / folder data helpers (scoped to a user)
+  // ======================================================================
+  const QUOTA = 15 * 1024 * 1024 * 1024; // 15 GB nominal
+  const MAX_FILE = 100 * 1024 * 1024;    // 100 MB per file
+
+  async function foldersIn(userId, parentId) {
+    const all = await store.all("folders");
+    return all.filter((f) => f.userId === userId && (f.parentId || null) === (parentId || null))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+  async function filesIn(userId, folderId) {
+    const all = await store.all("files");
+    return all.filter((f) => f.userId === userId && (f.folderId || null) === (folderId || null))
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+  async function allFiles(userId) {
+    return (await store.all("files")).filter((f) => f.userId === userId);
+  }
+  async function breadcrumbFor(userId, folderId) {
+    const chain = [];
+    let cur = folderId ? await store.get("folders", folderId) : null;
+    while (cur && cur.userId === userId) {
+      chain.unshift({ id: cur.id, name: cur.name });
+      cur = cur.parentId ? await store.get("folders", cur.parentId) : null;
+    }
+    return chain;
+  }
+  async function usedBytes(userId) {
+    return (await allFiles(userId)).reduce((sum, f) => sum + (f.size || 0), 0);
+  }
+  // Recursively collect a folder and all descendants.
+  async function descendantFolderIds(userId, rootId) {
+    const all = (await store.all("folders")).filter((f) => f.userId === userId);
+    const result = [rootId];
+    let frontier = [rootId];
+    while (frontier.length) {
+      const next = all.filter((f) => frontier.includes(f.parentId)).map((f) => f.id);
+      result.push(...next);
+      frontier = next;
+    }
+    return result;
+  }
+  async function deleteFolderDeep(userId, folderId) {
+    const ids = await descendantFolderIds(userId, folderId);
+    const files = (await store.all("files")).filter((f) => f.userId === userId && ids.includes(f.folderId));
+    for (const f of files) await store.del("files", f.id);
+    for (const id of ids) await store.del("folders", id);
+  }
+
+  // ======================================================================
+  // Utilities
+  // ======================================================================
+  function formatBytes(bytes) {
+    if (!bytes) return "0 B";
+    const u = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + " " + u[i];
+  }
+  function timeAgo(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return "just now";
+    const m = Math.floor(s / 60); if (m < 60) return m + " min ago";
+    const h = Math.floor(m / 60); if (h < 24) return h + " hr ago";
+    const d = Math.floor(h / 24); if (d < 7) return d + (d === 1 ? " day ago" : " days ago");
+    return new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+  function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+  function kindIcon(type) {
+    type = type || "";
+    if (type.startsWith("image/")) return "i-img";
+    if (type.startsWith("video/")) return "i-film";
+    if (type.startsWith("audio/")) return "i-music";
+    if (type.includes("zip") || type.includes("compress") || type.includes("tar")) return "i-archive";
+    return "i-doc";
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    let wrap = document.querySelector(".toast-wrap");
+    if (!wrap) { wrap = document.createElement("div"); wrap.className = "toast-wrap"; document.body.appendChild(wrap); }
+    wrap.innerHTML = `<div class="toast">${icon("check")}<span>${esc(msg)}</span></div>`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (wrap.innerHTML = ""), 2600);
+  }
+
+  // Theme toggle (overrides system by stamping data-theme).
+  function currentTheme() { return document.documentElement.getAttribute("data-theme"); }
+  function toggleTheme() {
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const cur = currentTheme() || (isDark ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("nimbus-theme", next); } catch {}
+  }
+  (function initTheme() { try { const t = localStorage.getItem("nimbus-theme"); if (t) document.documentElement.setAttribute("data-theme", t); } catch {} })();
+
+  // ======================================================================
+  // App state
+  // ======================================================================
+  const state = { user: null, view: "drive", folderId: null, query: "" };
+
+  // ======================================================================
+  // Auth view
+  // ======================================================================
+  let authMode = "login";
+  function renderAuth() {
+    closeAllPopups();
+    const isLogin = authMode === "login";
+    $root.innerHTML = `
+      <div class="auth-screen">
+        <div class="auth-card">
+          <div class="brand">
+            <span class="brand-mark">${icon("cloud")}</span>
+            <span class="brand-name">Nimbus<span class="accent">.</span></span>
+          </div>
+          <h1 class="auth-title">${isLogin ? "Welcome back" : "Create your account"}</h1>
+          <p class="auth-sub">${isLogin ? "Sign in to reach your files." : "Your files stay in this browser."}</p>
+          <div class="auth-error" id="auth-error" hidden></div>
+          <form id="auth-form" novalidate>
+            ${isLogin ? "" : `
+            <div class="field">
+              <label for="f-name">Name</label>
+              <input id="f-name" name="name" type="text" autocomplete="name" placeholder="Ada Lovelace" />
+            </div>`}
+            <div class="field">
+              <label for="f-email">Email</label>
+              <input id="f-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" />
+            </div>
+            <div class="field">
+              <label for="f-pass">Password</label>
+              <input id="f-pass" name="password" type="password" autocomplete="${isLogin ? "current-password" : "new-password"}" placeholder="${isLogin ? "Your password" : "At least 8 characters"}" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">${isLogin ? "Sign in" : "Create account"}</button>
+          </form>
+          <p class="auth-switch">
+            ${isLogin ? "New to Nimbus?" : "Already have an account?"}
+            <button type="button" id="auth-toggle">${isLogin ? "Create an account" : "Sign in"}</button>
+          </p>
+          <p class="auth-note">Nimbus is a self-contained demo. Accounts and files are stored privately in your browser${memoryMode ? " (this session only)" : ""} and never uploaded to a server.</p>
+        </div>
+      </div>`;
+
+    document.getElementById("auth-toggle").addEventListener("click", () => { authMode = isLogin ? "register" : "login"; renderAuth(); });
+    const form = document.getElementById("auth-form");
+    const errBox = document.getElementById("auth-error");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errBox.hidden = true;
+      const fd = new FormData(form);
+      try {
+        const user = isLogin
+          ? await login({ email: fd.get("email") || "", password: fd.get("password") || "" })
+          : await register({ name: fd.get("name") || "", email: fd.get("email") || "", password: fd.get("password") || "" });
+        session.set(user.id);
+        state.user = user; state.view = "drive"; state.folderId = null; state.query = "";
+        renderApp();
+        toast(isLogin ? "Signed in" : "Account created");
+      } catch (err) {
+        errBox.textContent = err.message; errBox.hidden = false;
+      }
+    });
+    const first = document.getElementById(isLogin ? "f-email" : "f-name");
+    if (first) first.focus();
+  }
+
+  // ======================================================================
+  // App view
+  // ======================================================================
+  function renderApp() {
+    closeAllPopups();
+    const u = state.user;
+    const initials = (u.name || u.email).trim().slice(0, 1).toUpperCase();
+    $root.innerHTML = `
+      <div class="app">
+        <header class="topbar">
+          <div class="brand">
+            <span class="brand-mark">${icon("cloud")}</span>
+            <span class="brand-name">Nimbus<span class="accent">.</span></span>
+          </div>
+          <div class="search">
+            ${icon("search")}
+            <input id="search" type="search" placeholder="Search in Nimbus" value="${esc(state.query)}" autocomplete="off" />
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">${icon("theme")}</button>
+            <div class="menu-wrap">
+              <button class="avatar" id="avatar-btn" title="${esc(u.name)}">${esc(initials)}</button>
+            </div>
+          </div>
+        </header>
+        <div class="body">
+          <aside class="sidebar">
+            <button class="btn btn-primary new-btn" id="new-btn">${icon("plus")}<span>New</span></button>
+            <nav class="nav" id="nav">
+              <button class="nav-item" data-view="drive">${icon("drive")}<span>My Drive</span></button>
+              <button class="nav-item" data-view="recent">${icon("clock")}<span>Recent</span></button>
+              <button class="nav-item" data-view="starred">${icon("star-o")}<span>Starred</span></button>
+            </nav>
+            <div class="storage">
+              <div class="storage-top">${icon("cloud")}<span>Storage</span></div>
+              <div class="meter"><div class="meter-fill" id="meter-fill" style="width:0%"></div></div>
+              <div class="storage-label" id="storage-label">—</div>
+            </div>
+          </aside>
+          <main class="main" id="main">
+            <div class="crumbs" id="crumbs"></div>
+            <div id="content"></div>
+          </main>
+        </div>
+      </div>`;
+
+    document.getElementById("theme-btn").addEventListener("click", toggleTheme);
+    document.getElementById("avatar-btn").addEventListener("click", (e) => { e.stopPropagation(); openAccountMenu(); });
+    document.getElementById("new-btn").addEventListener("click", (e) => { e.stopPropagation(); openNewMenu(e.currentTarget); });
+
+    document.querySelectorAll("#nav .nav-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.view = btn.dataset.view; state.folderId = null; state.query = "";
+        const s = document.getElementById("search"); if (s) s.value = "";
+        refresh();
+      });
+    });
+
+    const search = document.getElementById("search");
+    let searchTimer;
+    search.addEventListener("input", (e) => {
+      clearTimeout(searchTimer);
+      const q = e.target.value.trim();
+      searchTimer = setTimeout(() => {
+        state.query = q;
+        state.view = q ? "search" : "drive";
+        if (!q) state.folderId = state.folderId; // stay
+        refresh();
+      }, 200);
+    });
+
+    wireDropZone();
+    refresh();
+  }
+
+  function setActiveNav() {
+    document.querySelectorAll("#nav .nav-item").forEach((b) => {
+      const active = b.dataset.view === state.view;
+      b.classList.toggle("active", active);
+      const use = b.querySelector("use");
+      if (b.dataset.view === "starred") use.setAttribute("href", active ? "#i-star" : "#i-star-o");
+    });
+  }
+
+  async function updateStorageMeter() {
+    const used = await usedBytes(state.user.id);
+    const pct = Math.min(100, (used / QUOTA) * 100);
+    const fill = document.getElementById("meter-fill");
+    const label = document.getElementById("storage-label");
+    if (fill) fill.style.width = pct.toFixed(1) + "%";
+    if (label) label.innerHTML = `<b>${formatBytes(used)}</b> of ${formatBytes(QUOTA)} used`;
+  }
+
+  async function refresh() {
+    setActiveNav();
+    updateStorageMeter();
+    await renderCrumbs();
+    await renderContent();
+  }
+
+  async function renderCrumbs() {
+    const el = document.getElementById("crumbs");
+    if (!el) return;
+    if (state.view === "search") { el.innerHTML = `<span class="crumb current">Results for &ldquo;${esc(state.query)}&rdquo;</span>`; return; }
+    if (state.view === "recent") { el.innerHTML = `<span class="crumb current">Recent</span>`; return; }
+    if (state.view === "starred") { el.innerHTML = `<span class="crumb current">Starred</span>`; return; }
+    const chain = await breadcrumbFor(state.user.id, state.folderId);
+    let html = `<button class="crumb ${chain.length ? "" : "current"}" data-folder="">My Drive</button>`;
+    chain.forEach((c, i) => {
+      html += `<span class="sep">/</span>`;
+      html += `<button class="crumb ${i === chain.length - 1 ? "current" : ""}" data-folder="${c.id}">${esc(c.name)}</button>`;
+    });
+    el.innerHTML = html;
+    el.querySelectorAll(".crumb").forEach((b) => b.addEventListener("click", () => { state.folderId = b.dataset.folder || null; state.view = "drive"; state.query = ""; const s = document.getElementById("search"); if (s) s.value = ""; refresh(); }));
+  }
+
+  async function renderContent() {
+    const el = document.getElementById("content");
+    if (!el) return;
+    const uidv = state.user.id;
+    let folders = [], files = [], showFolders = true;
+
+    if (state.view === "search") {
+      showFolders = false;
+      const q = state.query.toLowerCase();
+      files = (await allFiles(uidv)).filter((f) => f.name.toLowerCase().includes(q)).sort((a, b) => b.createdAt - a.createdAt);
+    } else if (state.view === "recent") {
+      showFolders = false;
+      files = (await allFiles(uidv)).sort((a, b) => b.createdAt - a.createdAt).slice(0, 40);
+    } else if (state.view === "starred") {
+      showFolders = false;
+      files = (await allFiles(uidv)).filter((f) => f.starred).sort((a, b) => b.createdAt - a.createdAt);
+    } else {
+      folders = await foldersIn(uidv, state.folderId);
+      files = await filesIn(uidv, state.folderId);
+    }
+
+    let html = "";
+    if (showFolders && folders.length) {
+      html += `<section class="section"><div class="section-label">Folders</div><div class="grid" id="folder-grid">${folders.map(folderCardHTML).join("")}</div></section>`;
+    }
+    if (files.length) {
+      const label = state.view === "drive" ? "Files" : "";
+      html += `<section class="section">${label ? `<div class="section-label">${label}</div>` : ""}<div class="grid" id="file-grid">${files.map(fileCardHTML).join("")}</div></section>`;
+    }
+    if (!folders.length && !files.length) {
+      html += emptyStateHTML();
+    }
+    el.innerHTML = html;
+
+    el.querySelectorAll(".card[data-folder]").forEach((c) => wireFolderCard(c));
+    el.querySelectorAll(".card[data-file]").forEach((c) => wireFileCard(c, files.find((f) => f.id === c.dataset.file)));
+  }
+
+  function emptyStateHTML() {
+    const map = {
+      search: { icon: "i-search", h: "No matches", p: "No files match &ldquo;" + esc(state.query) + "&rdquo;." },
+      recent: { icon: "i-clock", h: "Nothing recent", p: "Files you add will show up here." },
+      starred: { icon: "i-star-o", h: "No starred files", p: "Star a file to keep it close at hand." },
+      drive: { icon: "i-drive", h: "This folder is empty", p: "Drag files here, or use the New button to upload." },
+    };
+    const m = map[state.view] || map.drive;
+    return `<div class="empty"><svg class="empty-icon" aria-hidden="true"><use href="#${m.icon}"/></svg><h3>${m.h}</h3><p>${m.p}</p></div>`;
+  }
+
+  function folderCardHTML(f) {
+    return `
+      <div class="card" data-folder="${f.id}" draggable="true" tabindex="0">
+        <div class="card-thumb" style="color:var(--accent)">${icon("folder")}</div>
+        <div class="card-body">
+          <div class="card-name">${esc(f.name)}</div>
+          <div class="card-sub">Folder</div>
+        </div>
+        <button class="icon-btn card-menu-btn" data-menu title="More">${icon("dots")}</button>
+      </div>`;
+  }
+  function fileCardHTML(f) {
+    const isImg = (f.type || "").startsWith("image/") && f.blob;
+    const thumb = isImg ? `<img alt="" src="${URL.createObjectURL(f.blob)}" />` : icon(kindIcon(f.type).replace("i-", ""));
+    const thumbColor = isImg ? "" : `style="color:var(--muted)"`;
+    return `
+      <div class="card" data-file="${f.id}" draggable="true" tabindex="0">
+        <div class="card-thumb" ${thumbColor}>${thumb}</div>
+        <div class="card-body">
+          <div class="card-name">${esc(f.name)}</div>
+          <div class="card-sub">${formatBytes(f.size)} · ${timeAgo(f.createdAt)}</div>
+        </div>
+        <span class="card-star ${f.starred ? "on" : ""}">${icon("star")}</span>
+        <button class="icon-btn card-menu-btn" data-menu title="More">${icon("dots")}</button>
+      </div>`;
+  }
+
+  // ---------- Card wiring ----------
+  function wireFolderCard(card) {
+    const id = card.dataset.folder;
+    const open = () => { state.folderId = id; state.view = "drive"; state.query = ""; const s = document.getElementById("search"); if (s) s.value = ""; refresh(); };
+    card.addEventListener("click", (e) => { if (e.target.closest("[data-menu]")) return; open(); });
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
+    card.querySelector("[data-menu]").addEventListener("click", (e) => { e.stopPropagation(); openFolderMenu(e.currentTarget, id); });
+    // Drag source (move folder)
+    card.addEventListener("dragstart", (e) => { e.dataTransfer.setData("application/x-nimbus", JSON.stringify({ kind: "folder", id })); e.dataTransfer.effectAllowed = "move"; card.classList.add("dragging"); });
+    card.addEventListener("dragend", () => card.classList.remove("dragging"));
+    // Drop target (accept file/folder into this folder)
+    card.addEventListener("dragover", (e) => { if (e.dataTransfer.types.includes("application/x-nimbus")) { e.preventDefault(); e.stopPropagation(); card.classList.add("dragover"); } });
+    card.addEventListener("dragleave", () => card.classList.remove("dragover"));
+    card.addEventListener("drop", async (e) => {
+      card.classList.remove("dragover");
+      const raw = e.dataTransfer.getData("application/x-nimbus"); if (!raw) return;
+      e.preventDefault(); e.stopPropagation();
+      const { kind, id: srcId } = JSON.parse(raw);
+      await moveInto(kind, srcId, id);
+    });
+  }
+
+  function wireFileCard(card, file) {
+    if (!file) return;
+    card.addEventListener("click", (e) => { if (e.target.closest("[data-menu]")) return; e.stopPropagation(); openPreview(file); });
+    card.addEventListener("keydown", (e) => { if (e.key === "Enter") openPreview(file); });
+    card.querySelector("[data-menu]").addEventListener("click", (e) => { e.stopPropagation(); openFileMenu(e.currentTarget, file); });
+    card.addEventListener("dragstart", (e) => { e.dataTransfer.setData("application/x-nimbus", JSON.stringify({ kind: "file", id: file.id })); e.dataTransfer.effectAllowed = "move"; card.classList.add("dragging"); });
+    card.addEventListener("dragend", () => card.classList.remove("dragging"));
+  }
+
+  async function moveInto(kind, srcId, destFolderId) {
+    if (kind === "file") {
+      const f = await store.get("files", srcId);
+      if (f && f.folderId !== destFolderId) { f.folderId = destFolderId; await store.put("files", f); toast("Moved “" + f.name + "”"); refresh(); }
+    } else if (kind === "folder") {
+      if (srcId === destFolderId) return;
+      const banned = await descendantFolderIds(state.user.id, srcId); // can't move into itself/descendant
+      if (banned.includes(destFolderId)) { toast("Can’t move a folder into itself"); return; }
+      const f = await store.get("folders", srcId);
+      if (f && f.parentId !== destFolderId) { f.parentId = destFolderId; await store.put("folders", f); toast("Moved “" + f.name + "”"); refresh(); }
+    }
+  }
+
+  // ======================================================================
+  // Menus / popups
+  // ======================================================================
+  function closeAllPopups() {
+    document.querySelectorAll(".ctx, .menu, .overlay").forEach((n) => n.remove());
+  }
+  document.addEventListener("click", () => closeAllPopups());
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAllPopups(); });
+
+  function placeCtx(node, anchor) {
+    document.body.appendChild(node);
+    const r = anchor.getBoundingClientRect();
+    const nr = node.getBoundingClientRect();
+    let left = r.right - nr.width; let top = r.bottom + 6;
+    if (top + nr.height > window.innerHeight - 8) top = r.top - nr.height - 6;
+    if (left < 8) left = 8;
+    node.style.left = Math.max(8, left) + "px";
+    node.style.top = Math.max(8, top) + "px";
+  }
+
+  function ctxMenu(anchor, items) {
+    closeAllPopups();
+    const node = document.createElement("div");
+    node.className = "ctx";
+    node.innerHTML = items.map((it) => it.sep ? `<div class="ctx-sep"></div>` : `<button class="${it.danger ? "danger" : ""}">${icon(it.icon)}<span>${it.label}</span></button>`).join("");
+    node.addEventListener("click", (e) => e.stopPropagation());
+    let bi = 0;
+    items.forEach((it) => { if (it.sep) return; const btn = node.querySelectorAll("button")[bi++]; btn.addEventListener("click", () => { closeAllPopups(); it.onClick(); }); });
+    placeCtx(node, anchor);
+  }
+
+  function openNewMenu(anchor) {
+    ctxMenu(anchor, [
+      { icon: "folder-plus", label: "New folder", onClick: promptNewFolder },
+      { icon: "upload", label: "Upload files", onClick: pickFiles },
+    ]);
+  }
+  function openFolderMenu(anchor, id) {
+    ctxMenu(anchor, [
+      { icon: "rename", label: "Rename", onClick: () => promptRenameFolder(id) },
+      { sep: true },
+      { icon: "trash", label: "Delete", danger: true, onClick: () => confirmDeleteFolder(id) },
+    ]);
+  }
+  function openFileMenu(anchor, file) {
+    ctxMenu(anchor, [
+      { icon: "eye", label: "Preview", onClick: () => openPreview(file) },
+      { icon: "star", label: file.starred ? "Remove star" : "Add star", onClick: () => toggleStar(file) },
+      { icon: "rename", label: "Rename", onClick: () => promptRenameFile(file) },
+      { sep: true },
+      { icon: "trash", label: "Delete", danger: true, onClick: () => confirmDeleteFile(file) },
+    ]);
+  }
+
+  function openAccountMenu() {
+    closeAllPopups();
+    const u = state.user;
+    const node = document.createElement("div");
+    node.className = "menu";
+    node.innerHTML = `
+      <div class="menu-head">
+        <div class="n">${esc(u.name)}</div>
+        <div class="e">${esc(u.email)}</div>
+      </div>
+      <button class="menu-item" id="mi-theme">${icon("theme")}<span>Toggle theme</span></button>
+      <button class="menu-item" id="mi-logout">${icon("logout")}<span>Sign out</span></button>`;
+    node.addEventListener("click", (e) => e.stopPropagation());
+    document.body.appendChild(node);
+    const btn = document.getElementById("avatar-btn").getBoundingClientRect();
+    node.style.right = (window.innerWidth - btn.right) + "px";
+    node.style.top = (btn.bottom + 8) + "px";
+    node.style.left = "auto";
+    document.getElementById("mi-theme").addEventListener("click", () => { closeAllPopups(); toggleTheme(); });
+    document.getElementById("mi-logout").addEventListener("click", () => { closeAllPopups(); logout(); });
+  }
+
+  function logout() { session.clear(); state.user = null; authMode = "login"; renderAuth(); toast("Signed out"); }
+
+  // ======================================================================
+  // Actions
+  // ======================================================================
+  async function promptNewFolder() {
+    modalPrompt({ title: "New folder", label: "Folder name", value: "Untitled folder", confirm: "Create" }, async (name) => {
+      if (!name.trim()) return;
+      await store.put("folders", { id: uid(), userId: state.user.id, parentId: state.folderId, name: name.trim(), createdAt: Date.now() });
+      toast("Folder created"); refresh();
+    });
+  }
+  async function promptRenameFolder(id) {
+    const f = await store.get("folders", id); if (!f) return;
+    modalPrompt({ title: "Rename folder", label: "Folder name", value: f.name, confirm: "Rename" }, async (name) => {
+      if (!name.trim()) return; f.name = name.trim(); await store.put("folders", f); toast("Renamed"); refresh();
+    });
+  }
+  async function promptRenameFile(file) {
+    modalPrompt({ title: "Rename file", label: "File name", value: file.name, confirm: "Rename" }, async (name) => {
+      if (!name.trim()) return; file.name = name.trim(); await store.put("files", file); toast("Renamed"); refresh();
+    });
+  }
+  async function confirmDeleteFolder(id) {
+    const f = await store.get("folders", id); if (!f) return;
+    modalConfirm({ title: "Delete folder", body: `“${esc(f.name)}” and everything inside it will be permanently deleted.`, confirm: "Delete", danger: true }, async () => {
+      await deleteFolderDeep(state.user.id, id); toast("Folder deleted"); refresh();
+    });
+  }
+  async function confirmDeleteFile(file) {
+    modalConfirm({ title: "Delete file", body: `“${esc(file.name)}” will be permanently deleted.`, confirm: "Delete", danger: true }, async () => {
+      await store.del("files", file.id); toast("File deleted"); refresh();
+    });
+  }
+  async function toggleStar(file) {
+    file.starred = !file.starred; await store.put("files", file);
+    toast(file.starred ? "Added to Starred" : "Removed from Starred"); refresh();
+  }
+
+  // ---------- Uploads ----------
+  function pickFiles() {
+    const input = document.createElement("input");
+    input.type = "file"; input.multiple = true; input.style.display = "none";
+    document.body.appendChild(input);
+    input.addEventListener("change", () => { uploadFiles(input.files); input.remove(); });
+    input.click();
+  }
+
+  async function uploadFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    let ok = 0;
+    for (const file of files) {
+      if (file.size > MAX_FILE) { toast(`“${file.name}” is larger than ${formatBytes(MAX_FILE)}`); continue; }
+      const record = {
+        id: uid(), userId: state.user.id,
+        folderId: (state.view === "drive" ? state.folderId : null),
+        name: file.name, type: file.type || "application/octet-stream",
+        size: file.size, blob: file, starred: false, createdAt: Date.now(),
+      };
+      try { await store.put("files", record); ok++; }
+      catch (e) { toast(`Could not store “${file.name}”`); }
+    }
+    if (ok) {
+      toast(ok === 1 ? "1 file uploaded" : `${ok} files uploaded`);
+      if (state.view !== "drive") { state.view = "drive"; const s = document.getElementById("search"); if (s) s.value = ""; state.query = ""; }
+      refresh();
+    }
+  }
+
+  function wireDropZone() {
+    const main = document.getElementById("main");
+    let depth = 0;
+    const hasOSFiles = (e) => Array.from(e.dataTransfer.types || []).includes("Files");
+    main.addEventListener("dragenter", (e) => { if (!hasOSFiles(e)) return; e.preventDefault(); depth++; main.classList.add("dropping"); });
+    main.addEventListener("dragover", (e) => { if (hasOSFiles(e)) e.preventDefault(); });
+    main.addEventListener("dragleave", (e) => { if (!hasOSFiles(e)) return; depth--; if (depth <= 0) { depth = 0; main.classList.remove("dropping"); } });
+    main.addEventListener("drop", (e) => {
+      if (!hasOSFiles(e)) return;
+      e.preventDefault(); depth = 0; main.classList.remove("dropping");
+      uploadFiles(e.dataTransfer.files);
+    });
+  }
+  // Prevent the browser from navigating when files are dropped outside the zone.
+  ["dragover", "drop"].forEach((ev) => window.addEventListener(ev, (e) => {
+    if (Array.from(e.dataTransfer ? e.dataTransfer.types : []).includes("Files") && !e.target.closest("#main")) e.preventDefault();
+  }));
+
+  // ======================================================================
+  // Preview
+  // ======================================================================
+  async function openPreview(file) {
+    closeAllPopups();
+    const overlay = document.createElement("div");
+    overlay.className = "overlay";
+    overlay.innerHTML = `
+      <div class="modal preview" role="dialog" aria-modal="true">
+        <div class="preview-head">
+          <div class="card-thumb" style="color:var(--muted)">${icon(kindIcon(file.type).replace("i-", ""))}</div>
+          <div class="t">
+            <div class="nm">${esc(file.name)}</div>
+            <div class="mt">${formatBytes(file.size)} · ${file.type || "file"} · ${timeAgo(file.createdAt)}</div>
+          </div>
+          <button class="icon-btn ${file.starred ? "is-star active" : "is-star"}" id="pv-star" title="Star">${icon(file.starred ? "star" : "star-o")}</button>
+          <button class="icon-btn" id="pv-close" title="Close">${icon("plus")}</button>
+        </div>
+        <div class="preview-stage" id="pv-stage"><div class="no-preview">Loading…</div></div>
+      </div>`;
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeAllPopups(); });
+    overlay.querySelector(".modal").addEventListener("click", (e) => e.stopPropagation());
+    document.body.appendChild(overlay);
+    // Rotate the close "+" into an x via transform
+    const closeBtn = document.getElementById("pv-close");
+    closeBtn.querySelector("svg").style.transform = "rotate(45deg)";
+    closeBtn.addEventListener("click", () => closeAllPopups());
+    document.getElementById("pv-star").addEventListener("click", async () => { await toggleStar(file); closeAllPopups(); });
+
+    const stage = document.getElementById("pv-stage");
+    const type = file.type || "";
+    try {
+      if (type.startsWith("image/")) {
+        const url = URL.createObjectURL(file.blob);
+        stage.innerHTML = `<img alt="${esc(file.name)}" src="${url}" />`;
+      } else if (type.startsWith("text/") || /json|javascript|xml|csv|svg\+xml/.test(type)) {
+        const text = await file.blob.text();
+        stage.innerHTML = `<pre>${esc(text.slice(0, 50000))}</pre>`;
+      } else if (type.startsWith("video/")) {
+        const url = URL.createObjectURL(file.blob);
+        stage.innerHTML = `<video controls style="max-width:100%;max-height:60vh;border-radius:8px" src="${url}"></video>`;
+      } else if (type.startsWith("audio/")) {
+        const url = URL.createObjectURL(file.blob);
+        stage.innerHTML = `<audio controls src="${url}"></audio>`;
+      } else {
+        stage.innerHTML = `<div class="no-preview">${icon(kindIcon(type).replace("i-", ""))}<div>No inline preview for this file type.</div></div>`;
+      }
+    } catch (e) {
+      stage.innerHTML = `<div class="no-preview">Could not load this file.</div>`;
+    }
+  }
+
+  // ======================================================================
+  // Modal helpers
+  // ======================================================================
+  function modalPrompt({ title, label, value, confirm }, onConfirm) {
+    closeAllPopups();
+    const overlay = document.createElement("div");
+    overlay.className = "overlay";
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3>${title}</h3>
+        <div class="field">
+          <label for="m-input">${label}</label>
+          <input id="m-input" type="text" value="${esc(value || "")}" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-cancel>Cancel</button>
+          <button class="btn btn-primary" data-ok>${confirm || "OK"}</button>
+        </div>
+      </div>`;
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeAllPopups(); });
+    document.body.appendChild(overlay);
+    const input = document.getElementById("m-input");
+    input.focus(); input.select();
+    const done = () => { const v = input.value; closeAllPopups(); onConfirm(v); };
+    overlay.querySelector("[data-ok]").addEventListener("click", done);
+    overlay.querySelector("[data-cancel]").addEventListener("click", () => closeAllPopups());
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); done(); } });
+  }
+
+  function modalConfirm({ title, body, confirm, danger }, onConfirm) {
+    closeAllPopups();
+    const overlay = document.createElement("div");
+    overlay.className = "overlay";
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3>${title}</h3>
+        <p style="margin:0;color:var(--muted);font-size:14.5px;line-height:1.55">${body}</p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-cancel>Cancel</button>
+          <button class="btn ${danger ? "btn-danger" : "btn-primary"}" data-ok>${confirm || "Confirm"}</button>
+        </div>
+      </div>`;
+    overlay.addEventListener("click", (e) => { if (e.target === overlay) closeAllPopups(); });
+    document.body.appendChild(overlay);
+    overlay.querySelector("[data-ok]").addEventListener("click", () => { closeAllPopups(); onConfirm(); });
+    overlay.querySelector("[data-cancel]").addEventListener("click", () => closeAllPopups());
+    overlay.querySelector("[data-ok]").focus();
+  }
+
+  // ======================================================================
+  // Boot
+  // ======================================================================
+  (async function boot() {
+    await openDB();
+    state.user = await currentUser();
+    if (state.user) renderApp(); else renderAuth();
+  })();
+})();
+</script>
+</body>
+</html>

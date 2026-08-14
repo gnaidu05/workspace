@@ -17,6 +17,29 @@ favorites, search, and download — each account sees only its own files.
   one account can never read, download, or modify another's files.
 - **Storage meter** — shows total space used by your files.
 
+## Live web version
+
+There are two ways to run Drive as a live site:
+
+1. **`docs/index.html` — a self-contained, zero-backend build.** The entire app
+   (accounts, folders, uploads, search, starring, previews) runs in the browser
+   and persists to IndexedDB. Open the file directly, or host the `docs/` folder
+   anywhere static — including **GitHub Pages**:
+
+   > Repo **Settings → Pages → Build and deployment → Source: Deploy from a
+   > branch**, then pick your branch and the **`/docs`** folder. Your live URL
+   > appears within a minute.
+
+   Because it has no server, data lives only in the visitor's own browser — great
+   for a demo or personal use, and nothing ever leaves the device.
+
+2. **The Node/Express app** (below) — a real multi-user backend with shared
+   storage. Deploy it to any Node host (Render, Railway, Fly.io, a VPS, etc.):
+   set the environment variables from `.env.example` (especially a strong
+   `JWT_SECRET`), run `npm install && npm start`, and point the host at port
+   `PORT`. Uploaded files and the SQLite database live on the server's disk, so
+   use a persistent volume in production.
+
 ## Tech stack
 
 | Layer     | Choice                                             |
