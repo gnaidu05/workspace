@@ -1,0 +1,34 @@
+# Render Blueprint — one-click deploy of the Node/Express backend.
+# In Render: New → Blueprint → connect this repo. Render reads this file.
+#
+# NOTE: The persistent `disk` below (which keeps the SQLite database and
+# uploaded files across restarts/redeploys) requires a paid instance type.
+# To deploy on the FREE plan instead, set `plan: free` and delete the `disk:`
+# block plus the DB_PATH/UPLOAD_DIR vars — storage is then ephemeral and resets
+# whenever the service restarts or spins down.
+services:
+  - type: web
+    name: nimbus-drive
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # A strong signing secret is generated once and kept stable by Render.
+      - key: JWT_SECRET
+        generateValue: true
+      # Point the database and uploads at the mounted persistent disk.
+      - key: DB_PATH
+        value: /data/data.db
+      - key: UPLOAD_DIR
+        value: /data/uploads
+      - key: MAX_UPLOAD_BYTES
+        value: "52428800"
+    disk:
+      name: nimbus-data
+      mountPath: /data
+      sizeGB: 1

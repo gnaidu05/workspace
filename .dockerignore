@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log*
+.git
+.github
+uploads
+data.db
+data.db-*
+*.sqlite
+*.sqlite3
+.env
+docs
+test
+.DS_Store

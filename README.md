@@ -40,12 +40,67 @@ There are two ways to run Drive as a live site:
    Because it has no server, data lives only in the visitor's own browser — great
    for a demo or personal use, and nothing ever leaves the device.
 
-2. **The Node/Express app** (below) — a real multi-user backend with shared
-   storage. Deploy it to any Node host (Render, Railway, Fly.io, a VPS, etc.):
-   set the environment variables from `.env.example` (especially a strong
-   `JWT_SECRET`), run `npm install && npm start`, and point the host at port
-   `PORT`. Uploaded files and the SQLite database live on the server's disk, so
-   use a persistent volume in production.
+2. **The Node/Express app** — a real multi-user backend with shared, server-side
+   storage. See **[Deploying the backend](#deploying-the-backend)** for one-click
+   Render, Docker, and other host instructions.
+
+## Deploying the backend
+
+The Node/Express app is a real server, so it needs a host that runs Node and
+gives it a **persistent disk** (the SQLite database and uploaded files live on
+disk — without a persistent volume they reset on every restart/redeploy). It
+ships with a `Dockerfile` and a Render Blueprint so deploying is a few clicks.
+
+Whatever the host, set these environment variables (see `.env.example`):
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `JWT_SECRET` | **yes** | Signs session tokens. Use a long random string. |
+| `NODE_ENV` | recommended | Set to `production` (enables `Secure` cookies). |
+| `DB_PATH` | recommended | SQLite file path — put it on the persistent disk. |
+| `UPLOAD_DIR` | recommended | Uploads directory — put it on the persistent disk. |
+| `PORT` | optional | Port to listen on (most hosts set this for you). |
+| `MAX_UPLOAD_BYTES` | optional | Max upload size in bytes (default 50 MB). |
+
+Health check endpoint: **`GET /api/health`** → `{"ok":true}`.
+
+### Option A — Render (one click)
+
+This repo includes `render.yaml`. In Render: **New → Blueprint**, connect the
+repo, and Render provisions a web service with a 1 GB persistent disk mounted at
+`/data`, generates a `JWT_SECRET`, and points `DB_PATH`/`UPLOAD_DIR` at the disk.
+The persistent disk requires a paid instance type; to try it free, edit
+`render.yaml` to `plan: free` and remove the `disk:` block (storage is then
+ephemeral). See the comments in `render.yaml`.
+
+### Option B — Docker (any container host)
+
+```bash
+docker build -t nimbus-drive .
+docker run -d -p 3000:3000 \
+  -e JWT_SECRET="$(openssl rand -hex 32)" \
+  -v nimbus-data:/data \
+  nimbus-drive
+```
+
+The image runs as a non-root user, listens on `3000`, and reads/writes the
+database and uploads under `/data` — mount a volume there to persist them. This
+same image deploys to **Fly.io** (`fly launch` detects the Dockerfile; add a
+volume mounted at `/data`), **Railway**, Google Cloud Run, Kubernetes, or any
+VPS with Docker.
+
+### Option C — bare Node on a VPS
+
+```bash
+npm ci
+export NODE_ENV=production JWT_SECRET="$(openssl rand -hex 32)"
+export DB_PATH=/var/lib/nimbus/data.db UPLOAD_DIR=/var/lib/nimbus/uploads
+node server.js
+```
+
+Run it under a process manager (systemd, pm2) and put a TLS-terminating reverse
+proxy (nginx, Caddy) in front so the `Secure` session cookie is served over
+HTTPS.
 
 ## Tech stack
 
