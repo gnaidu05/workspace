@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · Drive</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="auth-body">
+  <main class="auth-card">
+    <div class="brand">
+      <span class="brand-mark">▲</span>
+      <h1>Drive</h1>
+    </div>
+    <p class="auth-subtitle" id="subtitle">Sign in to your account</p>
+
+    <div id="error" class="error" hidden></div>
+
+    <form id="login-form">
+      <label>
+        Email
+        <input type="email" name="email" autocomplete="email" required />
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="btn-primary">Sign in</button>
+    </form>
+
+    <form id="register-form" hidden>
+      <label>
+        Name
+        <input type="text" name="name" autocomplete="name" required />
+      </label>
+      <label>
+        Email
+        <input type="email" name="email" autocomplete="email" required />
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" autocomplete="new-password" minlength="8" required />
+      </label>
+      <button type="submit" class="btn-primary">Create account</button>
+    </form>
+
+    <p class="auth-toggle">
+      <span id="toggle-text">Don't have an account?</span>
+      <a href="#" id="toggle-link">Sign up</a>
+    </p>
+  </main>
+
+  <script src="/login.js"></script>
+</body>
+</html>

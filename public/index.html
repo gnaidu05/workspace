@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drive</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">▲</span>
+      <span class="brand-name">Drive</span>
+    </div>
+    <div class="search">
+      <input type="search" id="search-input" placeholder="Search files…" />
+    </div>
+    <div class="topbar-right">
+      <span id="user-name" class="user-name"></span>
+      <button id="logout-btn" class="btn-ghost">Sign out</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <button id="upload-btn" class="btn-primary block">Upload file</button>
+      <button id="new-folder-btn" class="btn-ghost block">New folder</button>
+      <input type="file" id="file-input" hidden multiple />
+
+      <nav class="nav">
+        <a href="#" class="nav-item active" data-view="my-drive">My Drive</a>
+        <a href="#" class="nav-item" data-view="starred">Starred</a>
+      </nav>
+
+      <div class="storage">
+        <div class="storage-label">Storage</div>
+        <div id="storage-used" class="storage-used">—</div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="breadcrumb" id="breadcrumb"></div>
+
+      <div id="drop-zone" class="drop-zone">
+        <section id="folders-section">
+          <h2 class="section-title">Folders</h2>
+          <div id="folders-grid" class="grid"></div>
+        </section>
+
+        <section>
+          <h2 class="section-title" id="files-title">Files</h2>
+          <div id="files-grid" class="grid"></div>
+        </section>
+
+        <div id="empty-state" class="empty" hidden>
+          <p>This folder is empty.</p>
+          <p class="muted">Drag &amp; drop files here or use the Upload button.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
