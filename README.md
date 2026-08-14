@@ -28,9 +28,14 @@ There are two ways to run Drive as a live site:
 
    > This repo ships a **GitHub Actions workflow**
    > (`.github/workflows/deploy-pages.yml`) that publishes `docs/` to Pages on
-   > every push. It enables Pages itself (`configure-pages` with
-   > `enablement: true`), so no manual repo setting is required — the live URL
-   > appears in the workflow run's summary and under **Settings → Pages**.
+   > every push. **One-time setup:** open **Settings → Pages → Build and
+   > deployment** and set **Source: GitHub Actions**. After that, every push
+   > deploys automatically and the live URL appears in the workflow run's
+   > summary and under **Settings → Pages**.
+   >
+   > (The workflow also requests auto-enablement via `configure-pages`, but the
+   > default Actions token often lacks permission to create the Pages site, so
+   > the one-time Source selection above is the reliable way to turn Pages on.)
 
    Because it has no server, data lives only in the visitor's own browser — great
    for a demo or personal use, and nothing ever leaves the device.
