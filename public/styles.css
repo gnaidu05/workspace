@@ -65,6 +65,7 @@ button { font: inherit; cursor: pointer; }
 }
 .auth-subtitle { color: var(--muted); margin-top: -6px; margin-bottom: 24px; }
 .auth-card form { display: flex; flex-direction: column; gap: 16px; }
+.auth-card form[hidden] { display: none; }
 .auth-card label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
 .auth-card input {
   padding: 11px 12px;
