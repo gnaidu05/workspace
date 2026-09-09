@@ -3192,8 +3192,13 @@ function writeDraft(state) {
 
 // --- server --------------------------------------------------------------
 
+// Where the plan API lives. Defaults to /api; a host that serves the planner
+// under a path prefix (the Vercel deployment mounts it at /campusroute) sets
+// `window.CAMPUSROUTE_API_BASE` in the page before this module loads.
+const apiBase = () => String(globalThis.CAMPUSROUTE_API_BASE || '/api').replace(/\/$/, '');
+
 async function api(path, { method = 'GET', body, token } = {}) {
-  const response = await fetch('/api' + path, {
+  const response = await fetch(apiBase() + path, {
     method,
     cache: 'no-store',
     headers: {

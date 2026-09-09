@@ -47,8 +47,11 @@ Health check: `GET /api/health` → `{"ok":true}`.
 
 ### Deploy
 
-The live deployment runs on Cloudflare (Worker + D1) — its sources and a
-redeploy checklist are in [deploy/cloudflare](deploy/cloudflare/README.md).
+- **Vercel** — this repository ships a serverless function that serves the
+  planner at `/campusroute` with its API on Turso/libSQL. See
+  [deploy/vercel](deploy/vercel/README.md).
+- **Cloudflare** — a Worker + D1 build of the same app; sources and a redeploy
+  checklist in [deploy/cloudflare](deploy/cloudflare/README.md).
 
 Any host that runs Node and gives it a writable directory works too. With Docker:
 
