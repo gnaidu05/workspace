@@ -77,7 +77,7 @@ const build = async () => {
   const faviconUrl = 'data:image/svg+xml;base64,' + Buffer.from(favicon).toString('base64');
 
   const banner = ARTIFACT
-    ? `<div id="artifact-note">Preview build · planning, editing and every view work here, and your plan is kept in this browser. Shared links, campus search, measured road times and file exports need the full app — run it from <code>campusroute/</code>.</div>`
+    ? `<div id="artifact-note">Preview build · planning, editing and every view work here, and your plan is kept in this browser. For shared links, campus search, measured road times and file exports, use the live app at <a href="https://campusroute-planner.higgsfield.app/planner">campusroute-planner.higgsfield.app</a>.</div>`
     : '';
 
   const body = `<div id="app"><main class="boot"><h1>Team travel planner</h1><p>Loading the planner…</p></main></div>
@@ -99,6 +99,7 @@ ${parts.join('\n\n')}
 ${css}
 #artifact-note { margin: 0; padding: 10px 32px; background: #14332c; color: #d6e8c8; font-size: .8125rem; line-height: 1.6; }
 #artifact-note code { background: #ffffff1f; padding: 1px 5px; border-radius: 4px; }
+#artifact-note a { color: #eaf3e2; text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 720px) { #artifact-note { padding: 10px 18px; } }
 </style>
 ${banner}

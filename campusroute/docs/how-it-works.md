@@ -194,6 +194,15 @@ are capped, overnight rest is checked between days, and a grouping that needs
 more nights than allowed is rejected rather than quietly produced. Set
 `dayStart 0 / dayEnd 24 / rest 0` to get the original's behaviour back.
 
+### Where it runs
+
+The public deployment is a single Cloudflare Worker with a D1 database
+(**https://campusroute-planner.higgsfield.app**, planner at `/planner`): the
+same engine, the same five endpoints, the same revision and edit-key rules, with
+plans in a table instead of JSON files. `deploy/cloudflare/` holds those sources.
+A static copy of the single-file build also lives in this repo's `docs/` for
+GitHub Pages, where plans stay in the visitor's own browser.
+
 ### Other differences
 
 - Any of the 44 reference cities can be a base, and `compareBases` will re-plan

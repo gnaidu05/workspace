@@ -5,6 +5,11 @@ into shared tours, work out road, air and rail travel around them, count
 overnight stays, assign teams and named people, and see what the grouping saves
 against sending someone on a separate trip per visit.
 
+**Live: https://campusroute-planner.higgsfield.app** — the planner is at
+[/planner](https://campusroute-planner.higgsfield.app/planner). That deployment
+runs the full app (see [deploy/cloudflare](deploy/cloudflare/README.md)), so
+publishing and shared links work there.
+
 **No accounts.** A plan starts as a local draft in your browser. Publish it and
 you get two links — a **view link** to circulate and an **edit link** to keep.
 Anyone holding the view link can read the plan and fork their own copy; anyone
@@ -42,7 +47,10 @@ Health check: `GET /api/health` → `{"ok":true}`.
 
 ### Deploy
 
-Any host that runs Node and gives it a writable directory works. With Docker:
+The live deployment runs on Cloudflare (Worker + D1) — its sources and a
+redeploy checklist are in [deploy/cloudflare](deploy/cloudflare/README.md).
+
+Any host that runs Node and gives it a writable directory works too. With Docker:
 
 ```bash
 docker build -t campusroute .
