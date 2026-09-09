@@ -239,6 +239,16 @@ no rate limiting, no email verification, no file deduplication or virus
 scanning, and files are stored unencrypted on the local disk. Add those before
 using it for anything real.
 
+## Also in this repository
+
+**[`campusroute/`](campusroute/) — CampusRoute**, a public, no-login planner for
+multi-stop college assessment travel: it groups fixed-date visits into shared
+tours across road, air and rail, assigns teams and named people, and shares a
+plan through a view link and an edit link instead of accounts. It is a separate,
+dependency-free Node app (`cd campusroute && npm start`) with its own
+[README](campusroute/README.md) and a full teardown of the design in
+[docs/how-it-works.md](campusroute/docs/how-it-works.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
