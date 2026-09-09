@@ -1,16 +1,25 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/campusroute", "destination": "/api/campusroute?path=" },
-    { "source": "/campusroute/:path*", "destination": "/api/campusroute?path=:path*" },
-    { "source": "/(.*)", "destination": "/api/index" }
+    {
+      "source": "/campusroute",
+      "destination": "/api/campusroute?path="
+    },
+    {
+      "source": "/campusroute/:path*",
+      "destination": "/api/campusroute?path=:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
   ],
   "functions": {
     "api/index.js": {
       "includeFiles": "public/**"
     },
-    "api/campusroute.mjs": {
-      "includeFiles": "campusroute/docs/campusroute.html"
+    "api/campusroute.js": {
+      "includeFiles": "campusroute/**"
     }
   }
 }

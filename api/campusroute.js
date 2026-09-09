@@ -19,12 +19,11 @@
 // — it stays in local-draft mode, and says so, instead of pretending it can
 // share.
 
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+'use strict';
 
-import { validateState } from '../campusroute/public/engine.js';
+const { createHash, randomBytes, timingSafeEqual } = require('node:crypto');
+const { readFileSync } = require('node:fs');
+const path = require('node:path');
 
 const MAX_PLAN_BYTES = 2_000_000;
 const MAX_PLANS = 5_000;
@@ -36,7 +35,7 @@ const API_BASE = '/campusroute/api';
 // the module loads takes the whole function down if it fails, and then even the
 // health check has nothing left to report.
 const PAGE_CANDIDATES = [
-  fileURLToPath(new URL('../campusroute/docs/campusroute.html', import.meta.url)),
+  path.join(__dirname, '..', 'campusroute', 'docs', 'campusroute.html'),
   path.join(process.cwd(), 'campusroute', 'docs', 'campusroute.html'),
 ];
 
@@ -59,6 +58,29 @@ function plannerHtml() {
   }
   plannerPage = null;
   return null;
+}
+
+// The planning engine is an ES module shared with the browser, so a CommonJS
+// function reaches it through a dynamic import — on first use, so a resolution
+// problem is something health can report instead of a dead function.
+let enginePromise = null;
+let engineError = null;
+
+async function engine() {
+  if (!enginePromise) {
+    enginePromise = import('../campusroute/public/engine.js').then(
+      (module) => {
+        engineError = null;
+        return module;
+      },
+      (error) => {
+        engineError = error.message;
+        enginePromise = null;
+        throw error;
+      },
+    );
+  }
+  return enginePromise;
 }
 
 // --- database --------------------------------------------------------------
@@ -88,7 +110,7 @@ async function database() {
   if (client) return client;
   const config = credentials();
   if (!config) return null;
-  const { createClient } = await import('@libsql/client');
+  const { createClient } = require('@libsql/client');
   client = createClient({ url: config.url, authToken: config.authToken });
   return client;
 }
@@ -161,7 +183,8 @@ async function readBody(req) {
 }
 
 // The same engine the browser uses, so a malformed plan is never stored.
-function checkState(state) {
+async function checkState(state) {
+  const { validateState } = await engine();
   const errors = validateState(state);
   if (errors.length) throw fail(errors[0], 422, { errors });
 }
@@ -192,11 +215,20 @@ async function handleApi(req, res, segments) {
       }
     }
     const page = Boolean(plannerHtml());
+    let engineOk = false;
+    try {
+      await engine();
+      engineOk = true;
+    } catch {
+      /* engineError carries the reason */
+    }
     return send(res, 200, {
       ok: true,
       service: 'campusroute',
       db,
       page,
+      engine: engineOk,
+      ...(engineOk ? {} : { engineError }),
       credentials: config ? `${config.prefix}_DATABASE_URL` : null,
       ...(error ? { error } : {}),
       ...(page ? {} : { pageError }),
@@ -214,7 +246,7 @@ async function handleApi(req, res, segments) {
   if (segments[0] === 'plans' && segments.length === 1) {
     if (req.method !== 'POST') return send(res, 405, { error: 'Use POST to create a plan.' });
     const body = await readBody(req);
-    checkState(body.state);
+    await checkState(body.state);
 
     const count = (await db.execute('SELECT COUNT(*) AS n FROM campusroute_plans')).rows[0];
     if (Number(count?.n || 0) >= MAX_PLANS) {
@@ -255,7 +287,7 @@ async function handleApi(req, res, segments) {
         return send(res, 403, { error: 'This plan is read-only from here. Open it with its edit link to make changes.' });
       }
       const body = await readBody(req);
-      checkState(body.state);
+      await checkState(body.state);
 
       const now = new Date().toISOString();
       // The revision in the WHERE clause is the concurrency check: a save built
@@ -288,7 +320,7 @@ async function handleApi(req, res, segments) {
   return send(res, 404, { error: 'No such endpoint.' });
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // vercel.json passes the path under /campusroute as ?path=…; fall back to the
   // request URL so the function also works when called directly.
   const url = new URL(req.url, 'http://localhost');
@@ -332,3 +364,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+module.exports = handler;
