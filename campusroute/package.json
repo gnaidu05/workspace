@@ -9,9 +9,18 @@
     "dev": "node --watch server.js",
     "test": "node --test test/*.test.js",
     "build:single": "node scripts/build-single-file.js",
-    "build:pages": "node scripts/build-single-file.js && cp docs/campusroute.html ../docs/campusroute.html"
+    "build:pages": "node scripts/build-single-file.js && cp docs/campusroute.html ../docs/campusroute.html",
+    "build:vercel": "node scripts/build-single-file.js && node scripts/build-single-file.js --vercel"
   },
-  "keywords": ["travel-planning", "route-optimisation", "itinerary", "openstreetmap", "osrm"],
+  "keywords": [
+    "travel-planning",
+    "route-optimisation",
+    "itinerary",
+    "openstreetmap",
+    "osrm"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

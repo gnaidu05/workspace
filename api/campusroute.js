@@ -22,66 +22,22 @@
 'use strict';
 
 const { createHash, randomBytes, timingSafeEqual } = require('node:crypto');
-const { readFileSync } = require('node:fs');
-const path = require('node:path');
+
+// One generated CommonJS file holds the built planner page and the validation
+// half of the engine (scripts/build-single-file.js --vercel in campusroute/), so
+// this function depends on nothing outside api/ — no cross-package ES modules
+// for the bundler to trace, and nothing to read off disk at all.
+const { PLANNER_PAGE, validateState } = require('./_campusroute-bundle.js');
 
 const MAX_PLAN_BYTES = 2_000_000;
 const MAX_PLANS = 5_000;
 const ID_ALPHABET = 'abcdefghijkmnopqrstuvwxyz23456789'; // no look-alikes
 const API_BASE = '/campusroute/api';
 
-// The built single-file planner, which vercel.json includes in this function's
-// bundle (`includeFiles`). Read on first use, never at import: work done while
-// the module loads takes the whole function down if it fails, and then even the
-// health check has nothing left to report.
-const PAGE_CANDIDATES = [
-  path.join(__dirname, '..', 'campusroute', 'docs', 'campusroute.html'),
-  path.join(process.cwd(), 'campusroute', 'docs', 'campusroute.html'),
-];
-
-let plannerPage;
-let pageError = null;
-
-function plannerHtml() {
-  if (plannerPage !== undefined) return plannerPage;
-  for (const candidate of PAGE_CANDIDATES) {
-    try {
-      plannerPage = readFileSync(candidate, 'utf8').replace(
-        '<body>',
-        `<body>\n<script>window.CAMPUSROUTE_API_BASE=${JSON.stringify(API_BASE)};</script>`,
-      );
-      pageError = null;
-      return plannerPage;
-    } catch (error) {
-      pageError = `${candidate}: ${error.code || error.message}`;
-    }
-  }
-  plannerPage = null;
-  return null;
-}
-
-// The planning engine is an ES module shared with the browser, so a CommonJS
-// function reaches it through a dynamic import — on first use, so a resolution
-// problem is something health can report instead of a dead function.
-let enginePromise = null;
-let engineError = null;
-
-async function engine() {
-  if (!enginePromise) {
-    enginePromise = import('../campusroute/public/engine.js').then(
-      (module) => {
-        engineError = null;
-        return module;
-      },
-      (error) => {
-        engineError = error.message;
-        enginePromise = null;
-        throw error;
-      },
-    );
-  }
-  return enginePromise;
-}
+const PLANNER_HTML = PLANNER_PAGE.replace(
+  '<body>',
+  `<body>\n<script>window.CAMPUSROUTE_API_BASE=${JSON.stringify(API_BASE)};</script>`,
+);
 
 // --- database --------------------------------------------------------------
 
@@ -183,8 +139,7 @@ async function readBody(req) {
 }
 
 // The same engine the browser uses, so a malformed plan is never stored.
-async function checkState(state) {
-  const { validateState } = await engine();
+function checkState(state) {
   const errors = validateState(state);
   if (errors.length) throw fail(errors[0], 422, { errors });
 }
@@ -214,24 +169,14 @@ async function handleApi(req, res, segments) {
         error = dbError.message;
       }
     }
-    const page = Boolean(plannerHtml());
-    let engineOk = false;
-    try {
-      await engine();
-      engineOk = true;
-    } catch {
-      /* engineError carries the reason */
-    }
     return send(res, 200, {
       ok: true,
       service: 'campusroute',
       db,
-      page,
-      engine: engineOk,
-      ...(engineOk ? {} : { engineError }),
+      page: PLANNER_HTML.length > 1000,
+      engine: typeof validateState === 'function',
       credentials: config ? `${config.prefix}_DATABASE_URL` : null,
       ...(error ? { error } : {}),
-      ...(page ? {} : { pageError }),
     });
   }
 
@@ -246,7 +191,7 @@ async function handleApi(req, res, segments) {
   if (segments[0] === 'plans' && segments.length === 1) {
     if (req.method !== 'POST') return send(res, 405, { error: 'Use POST to create a plan.' });
     const body = await readBody(req);
-    await checkState(body.state);
+    checkState(body.state);
 
     const count = (await db.execute('SELECT COUNT(*) AS n FROM campusroute_plans')).rows[0];
     if (Number(count?.n || 0) >= MAX_PLANS) {
@@ -287,7 +232,7 @@ async function handleApi(req, res, segments) {
         return send(res, 403, { error: 'This plan is read-only from here. Open it with its edit link to make changes.' });
       }
       const body = await readBody(req);
-      await checkState(body.state);
+      checkState(body.state);
 
       const now = new Date().toISOString();
       // The revision in the WHERE clause is the concurrency check: a save built
@@ -335,21 +280,12 @@ async function handler(req, res) {
         res.statusCode = 405;
         return res.end('Method not allowed');
       }
-      const html = plannerHtml();
-      if (!html) {
-        // The build output is missing from the deployment bundle — say which
-        // path was tried instead of failing blank.
-        return send(res, 503, {
-          error: 'The planner page is not in this deployment. Rebuild it with `npm run build:single` in campusroute/ and redeploy.',
-          detail: pageError,
-        });
-      }
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-      return res.end(html);
+      return res.end(PLANNER_HTML);
     }
 
     res.statusCode = 404;

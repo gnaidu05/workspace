@@ -17,9 +17,6 @@
   "functions": {
     "api/index.js": {
       "includeFiles": "public/**"
-    },
-    "api/campusroute.js": {
-      "includeFiles": "campusroute/**"
     }
   }
 }

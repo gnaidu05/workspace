@@ -11,12 +11,15 @@ function, alongside the Drive app that already lives here:
 
 The pieces:
 
-- **`api/campusroute.mjs`** — the function. Serves the page, runs the API, and
-  validates every stored plan with the same `campusroute/public/engine.js` the
-  browser uses.
+- **`api/campusroute.js`** — the function (CommonJS, like `api/index.js`).
+- **`api/_campusroute-bundle.js`** — generated: the built page plus the
+  validation half of the engine, in one CommonJS file. The function therefore
+  depends on nothing outside `api/`: no cross-package ES modules for the bundler
+  to trace, and nothing read off disk at runtime. An ESM function that imported
+  those files across packages deployed cleanly and then failed at module load in
+  production with no way to see why, which is what this avoids.
 - **`vercel.json`** — two rewrites ahead of the existing catch-all, passing the
-  sub-path as `?path=` so the function never has to guess the original URL, plus
-  `includeFiles` so the built page is in the function's bundle.
+  sub-path as `?path=` so the function never has to guess the original URL.
 
 ## Storage
 
@@ -50,11 +53,12 @@ Vercel builds this repository automatically:
 After a deploy, check `https://<host>/campusroute/api/health`:
 
 ```json
-{ "ok": true, "db": true, "credentials": "CAMPUSROUTE_DATABASE_URL" }
+{ "ok": true, "db": true, "page": true, "engine": true, "credentials": "CAMPUSROUTE_DATABASE_URL" }
 ```
 
 `credentials` names the variable the deployment picked up (never its value),
-`db` says whether that database actually answered. With `"db": false` the
+`db` says whether that database actually answered, and `page`/`engine` confirm
+the generated bundle shipped. With `"db": false` the
 planner runs in local-draft mode and hides Publish; an `error` field appears if
 the variables are set but the database refused the connection.
 
@@ -69,11 +73,14 @@ whole cycle — public read, edit-key unlock, refused write, saved write, stale
 conflict, invalid plan, delete — and cleans up after itself. With no plan store
 configured it reports that and stops after the page checks.
 
-## Rebuilding the page
+## Rebuilding after a change
 
-`npm run build:single` in `campusroute/` regenerates
-`campusroute/docs/campusroute.html`, which is what the function serves. Commit
-that file — the function reads it at runtime from the deployment bundle.
+```bash
+cd campusroute && npm run build:vercel
+```
+
+That regenerates `docs/campusroute.html` and `api/_campusroute-bundle.js`.
+Commit both — the deployment serves exactly what is committed.
 
 ## Differences from the Node server
 
