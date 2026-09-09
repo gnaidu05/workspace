@@ -6,18 +6,28 @@ const config = require('./config');
 
 // Use the remote (web/HTTP) client for Turso, and the local file client for
 // dev/test. Both expose the same `execute` / `batch` API.
+//
+// A serverless deployment has a read-only filesystem, so the local file client
+// cannot work there: opening the database hangs or fails at import and takes the
+// whole function down. Say so plainly instead, and let the readiness check
+// report it.
 let createClient;
 let clientOptions;
+let configError = null;
+
 if (config.turso.url) {
   ({ createClient } = require('@libsql/client/web'));
   clientOptions = { url: config.turso.url, authToken: config.turso.authToken };
+} else if (process.env.VERCEL) {
+  configError =
+    'No database is configured. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN — a serverless deployment has no writable disk for a local SQLite file.';
 } else {
   ({ createClient } = require('@libsql/client'));
   fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
   clientOptions = { url: 'file:' + config.dbPath };
 }
 
-const client = createClient(clientOptions);
+const client = configError ? null : createClient(clientOptions);
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS users (
@@ -54,14 +64,48 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS idx_folders_user ON folders(user_id, parent_id)`,
 ];
 
-// Initialise the schema once. `ready` is awaited by a middleware before any
-// request is handled, which matters on serverless cold starts.
-const ready = (async () => {
-  await client.execute('PRAGMA foreign_keys = ON');
-  for (const stmt of SCHEMA) {
-    await client.execute(stmt);
+// Initialise the schema once. `ensureReady()` is awaited by a middleware before
+// any request is handled, which matters on serverless cold starts.
+//
+// This must never reject on its own: an unhandled rejection at import time kills
+// the whole serverless function, so every route — even /api/health — answers
+// FUNCTION_INVOCATION_FAILED and there is nothing left to say why. Instead the
+// failure is captured, reported, and retried on the next request, so a database
+// that comes back needs no redeploy.
+let initPromise = null;
+let lastError = configError ? new Error(configError) : null;
+
+function ensureReady() {
+  if (configError) return Promise.reject(new Error(configError));
+  if (!initPromise) {
+    initPromise = (async () => {
+      await client.execute('PRAGMA foreign_keys = ON');
+      for (const stmt of SCHEMA) {
+        await client.execute(stmt);
+      }
+      lastError = null;
+    })().catch((error) => {
+      lastError = error;
+      initPromise = null; // let the next request try again
+      throw error;
+    });
   }
-})();
+  return initPromise;
+}
+
+// Never leaves a rejection unhandled, and never throws: for a health check.
+async function status() {
+  if (configError) return { db: 'unconfigured', error: configError };
+  try {
+    await ensureReady();
+    return { db: 'ready' };
+  } catch (error) {
+    return { db: 'error', error: error.message };
+  }
+}
+
+// Kept for callers that awaited the old eagerly-started promise.
+const ready = { then: (...args) => ensureReady().then(...args), catch: (...args) => ensureReady().catch(...args) };
 
 function toNumber(value) {
   return typeof value === 'bigint' ? Number(value) : value;
@@ -86,4 +130,4 @@ async function run(sql, args = []) {
   };
 }
 
-module.exports = { client, ready, get, all, run };
+module.exports = { client, ready, ensureReady, status, get, all, run };

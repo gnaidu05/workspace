@@ -1,11 +1,14 @@
-name: Deploy Nimbus to GitHub Pages
+name: Deploy docs/ to GitHub Pages
 
-# Publishes the self-contained browser build in docs/ to GitHub Pages.
+# Publishes the self-contained browser builds in docs/ to GitHub Pages:
+#   index.html       Nimbus (the Drive app)
+#   campusroute.html CampusRoute (the travel planner)
 on:
   push:
     branches:
       - main
       - claude/github-google-drive-auth-p3rmjo
+      - campus
   workflow_dispatch:
 
 # Allow the workflow to publish to Pages.

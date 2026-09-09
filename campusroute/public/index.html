@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#174d45">
+  <meta name="description" content="A public, no-login planner for multi-stop college assessment travel. Group visits into shared routes across road, air and rail, and share the plan with a link.">
+  <title>CampusRoute — public assessment travel planner</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="app">
+    <main class="boot">
+      <h1>Team travel planner</h1>
+      <p>Loading the planner…</p>
+      <noscript>CampusRoute plans routes in the browser, so it needs JavaScript enabled.</noscript>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <dialog id="editor"><div id="editor-content"></div></dialog>
+  <input type="file" id="import-file" accept="application/json,.json,text/csv,.csv" hidden>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
