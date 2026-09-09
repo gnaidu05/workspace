@@ -62,7 +62,11 @@ Whatever the host, set these environment variables (see `.env.example`):
 | `PORT` | optional | Port to listen on (most hosts set this for you). |
 | `MAX_UPLOAD_BYTES` | optional | Max upload size in bytes (default 50 MB). |
 
-Health check endpoint: **`GET /api/health`** → `{"ok":true}`.
+Health check endpoint: **`GET /api/health`** → `{"ok":true,"db":"ready"}` when
+the database answers. If storage is unconfigured or unreachable it stays up and
+returns **503** with the reason (`{"ok":false,"db":"unconfigured"|"error",
+"error":"…"}`) instead of taking the process down — so a broken deployment can
+be diagnosed from outside, and recovers on its own once the database is back.
 
 ### Option A — Render (one click)
 

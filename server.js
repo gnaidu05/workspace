@@ -17,19 +17,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Health first, and deliberately outside the database gate: when storage is
+// misconfigured this is the endpoint that has to keep answering and say so.
+app.get('/api/health', async (req, res) => {
+  const state = await db.status();
+  res.status(state.db === 'ready' ? 200 : 503).json({ ok: state.db === 'ready', ...state });
+});
+
 // Ensure the database schema is initialised before any request runs. On a
 // serverless cold start this awaits the one-time init; afterwards it's a
-// resolved promise and adds no latency.
+// resolved promise and adds no latency. A database that is down or
+// unconfigured answers 503 with the reason — it must never take the process
+// with it, or every route fails with nothing to explain it.
 app.use((req, res, next) => {
-  db.ready.then(() => next()).catch(next);
+  db.ensureReady().then(
+    () => next(),
+    (error) => {
+      console.error('database unavailable:', error.message);
+      res.status(503).json({ error: 'The database is unavailable. ' + error.message });
+    },
+  );
 });
 
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/files', fileRoutes);
-
-app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // Static frontend
 app.use(express.static(path.join(__dirname, 'public')));
