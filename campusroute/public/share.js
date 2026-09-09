@@ -149,7 +149,10 @@ export class Sharing {
     }
     try {
       const health = await api('/health');
-      this.serverAvailable = health.ok === true;
+      // A host that answers but has no plan store (`db: false`) cannot share a
+      // plan, so treat it as no server rather than offering a Publish button
+      // that would fail.
+      this.serverAvailable = health.ok === true && health.db !== false;
     } catch {
       this.serverAvailable = false;
     }

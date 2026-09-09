@@ -26,8 +26,12 @@ database driver this project already depends on — in their own
 
 | Variable | Purpose |
 | --- | --- |
-| `TURSO_DATABASE_URL` (or `CAMPUSROUTE_DATABASE_URL`) | database URL |
-| `TURSO_AUTH_TOKEN` (or `CAMPUSROUTE_AUTH_TOKEN`) | auth token |
+| `CAMPUSROUTE_DATABASE_URL` | database URL — preferred |
+| `CAMPUSROUTE_AUTH_TOKEN` | its auth token |
+| `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` | fallback: this project's existing pair |
+
+`CAMPUSROUTE_*` wins when both are present, so the planner can point at its own
+database without disturbing anything else in the project.
 
 **With no database configured the planner still runs** — every view, every
 calculation, exports and imports — it just stays in local-draft mode and says
@@ -43,9 +47,16 @@ Vercel builds this repository automatically:
   Vercel's SSO unless deployment protection is turned off — so a preview URL is
   not a public link.
 
-After a deploy, check `https://<host>/campusroute/api/health`. `{"ok":true,
-"db":true}` means shared links work; `"db":false` means the database variables
-are missing.
+After a deploy, check `https://<host>/campusroute/api/health`:
+
+```json
+{ "ok": true, "db": true, "credentials": "CAMPUSROUTE_DATABASE_URL" }
+```
+
+`credentials` names the variable the deployment picked up (never its value),
+`db` says whether that database actually answered. With `"db": false` the
+planner runs in local-draft mode and hides Publish; an `error` field appears if
+the variables are set but the database refused the connection.
 
 ## Rebuilding the page
 

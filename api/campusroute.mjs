@@ -12,10 +12,12 @@
 // vercel.json rewrites those paths here and passes the sub-path as ?path=, so
 // the function never has to guess what the visitor asked for.
 //
-// Serverless functions have no disk, so plans live in the same libSQL/Turso
-// database the rest of this project already uses (its own `campusroute_plans`
-// table). With no database configured the planner still runs — it just stays in
-// local-draft mode, and says so, instead of pretending it can share.
+// Serverless functions have no disk, so plans live in a libSQL/Turso database:
+// CAMPUSROUTE_DATABASE_URL / CAMPUSROUTE_AUTH_TOKEN when set, otherwise this
+// project's existing TURSO_* pair. Either way the planner keeps to its own
+// `campusroute_plans` table. With no database configured the planner still runs
+// — it stays in local-draft mode, and says so, instead of pretending it can
+// share.
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -44,14 +46,27 @@ const PLANNER_HTML = readFileSync(
 let client = null;
 let schemaReady = null;
 
+// CAMPUSROUTE_* wins, so the planner can be pointed at its own database without
+// disturbing whatever else in this project uses TURSO_*.
+function credentials() {
+  if (process.env.CAMPUSROUTE_DATABASE_URL) {
+    return {
+      prefix: 'CAMPUSROUTE',
+      url: process.env.CAMPUSROUTE_DATABASE_URL,
+      authToken: process.env.CAMPUSROUTE_AUTH_TOKEN,
+    };
+  }
+  if (process.env.TURSO_DATABASE_URL) {
+    return { prefix: 'TURSO', url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN };
+  }
+  return null;
+}
+
 function database() {
   if (client) return client;
-  const url = process.env.TURSO_DATABASE_URL || process.env.CAMPUSROUTE_DATABASE_URL;
-  if (!url) return null;
-  client = createClient({
-    url,
-    authToken: process.env.TURSO_AUTH_TOKEN || process.env.CAMPUSROUTE_AUTH_TOKEN,
-  });
+  const config = credentials();
+  if (!config) return null;
+  client = createClient({ url: config.url, authToken: config.authToken });
   return client;
 }
 
@@ -138,13 +153,32 @@ async function handleApi(req, res, segments) {
   const editKey = req.headers['x-edit-key'] || '';
 
   if (segments[0] === 'health') {
-    return send(res, 200, { ok: true, service: 'campusroute', db: Boolean(database()) });
+    // Names only, never values: enough to confirm which variables a deployment
+    // picked up, and whether the database actually answers.
+    const config = credentials();
+    let db = false;
+    let error;
+    if (config) {
+      try {
+        await ready();
+        db = true;
+      } catch (dbError) {
+        error = dbError.message;
+      }
+    }
+    return send(res, 200, {
+      ok: true,
+      service: 'campusroute',
+      db,
+      credentials: config ? `${config.prefix}_DATABASE_URL` : null,
+      ...(error ? { error } : {}),
+    });
   }
 
   const db = await ready();
   if (!db) {
     throw fail(
-      'This deployment has no plan database configured, so plans cannot be shared from here. Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.',
+      'This deployment has no plan database configured, so plans cannot be shared from here. Set CAMPUSROUTE_DATABASE_URL and CAMPUSROUTE_AUTH_TOKEN.',
       503,
     );
   }
