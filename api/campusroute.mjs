@@ -21,8 +21,8 @@
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { createClient } from '@libsql/client';
 
 import { validateState } from '../campusroute/public/engine.js';
 
@@ -31,15 +31,35 @@ const MAX_PLANS = 5_000;
 const ID_ALPHABET = 'abcdefghijkmnopqrstuvwxyz23456789'; // no look-alikes
 const API_BASE = '/campusroute/api';
 
-// The built single-file planner. vercel.json includes it in this function's
-// bundle (`includeFiles`), so it is read once per cold start.
-const PLANNER_HTML = readFileSync(
+// The built single-file planner, which vercel.json includes in this function's
+// bundle (`includeFiles`). Read on first use, never at import: work done while
+// the module loads takes the whole function down if it fails, and then even the
+// health check has nothing left to report.
+const PAGE_CANDIDATES = [
+  fileURLToPath(new URL('../campusroute/docs/campusroute.html', import.meta.url)),
   path.join(process.cwd(), 'campusroute', 'docs', 'campusroute.html'),
-  'utf8',
-).replace(
-  '<body>',
-  `<body>\n<script>window.CAMPUSROUTE_API_BASE=${JSON.stringify(API_BASE)};</script>`,
-);
+];
+
+let plannerPage;
+let pageError = null;
+
+function plannerHtml() {
+  if (plannerPage !== undefined) return plannerPage;
+  for (const candidate of PAGE_CANDIDATES) {
+    try {
+      plannerPage = readFileSync(candidate, 'utf8').replace(
+        '<body>',
+        `<body>\n<script>window.CAMPUSROUTE_API_BASE=${JSON.stringify(API_BASE)};</script>`,
+      );
+      pageError = null;
+      return plannerPage;
+    } catch (error) {
+      pageError = `${candidate}: ${error.code || error.message}`;
+    }
+  }
+  plannerPage = null;
+  return null;
+}
 
 // --- database --------------------------------------------------------------
 
@@ -62,17 +82,21 @@ function credentials() {
   return null;
 }
 
-function database() {
+// The libSQL client is imported on first use too, so a bundling problem with it
+// shows up as a reported error rather than a dead function.
+async function database() {
   if (client) return client;
   const config = credentials();
   if (!config) return null;
+  const { createClient } = await import('@libsql/client');
   client = createClient({ url: config.url, authToken: config.authToken });
   return client;
 }
 
-// Additive, and safe to run on every cold start.
-function ready() {
-  const db = database();
+// Additive, and safe to run on every cold start. A failure is retried on the
+// next request rather than cached for the life of the instance.
+async function ready() {
+  const db = await database();
   if (!db) return null;
   if (!schemaReady) {
     schemaReady = db.execute(`CREATE TABLE IF NOT EXISTS campusroute_plans (
@@ -83,11 +107,12 @@ function ready() {
       created_at    TEXT NOT NULL,
       updated_at    TEXT NOT NULL
     )`).catch((error) => {
-      schemaReady = null; // let the next request try again
+      schemaReady = null;
       throw error;
     });
   }
-  return schemaReady.then(() => db);
+  await schemaReady;
+  return db;
 }
 
 // --- helpers ---------------------------------------------------------------
@@ -166,12 +191,15 @@ async function handleApi(req, res, segments) {
         error = dbError.message;
       }
     }
+    const page = Boolean(plannerHtml());
     return send(res, 200, {
       ok: true,
       service: 'campusroute',
       db,
+      page,
       credentials: config ? `${config.prefix}_DATABASE_URL` : null,
       ...(error ? { error } : {}),
+      ...(page ? {} : { pageError }),
     });
   }
 
@@ -275,12 +303,21 @@ export default async function handler(req, res) {
         res.statusCode = 405;
         return res.end('Method not allowed');
       }
+      const html = plannerHtml();
+      if (!html) {
+        // The build output is missing from the deployment bundle — say which
+        // path was tried instead of failing blank.
+        return send(res, 503, {
+          error: 'The planner page is not in this deployment. Rebuild it with `npm run build:single` in campusroute/ and redeploy.',
+          detail: pageError,
+        });
+      }
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=300, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-      return res.end(PLANNER_HTML);
+      return res.end(html);
     }
 
     res.statusCode = 404;
