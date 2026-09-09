@@ -52,6 +52,15 @@ docker run -d -p 3000:3000 -v campusroute-data:/data -e DATA_DIR=/data campusrou
 For a host with no disk, mount a volume at `/data` (Fly.io, Railway, Render with
 a persistent disk) — a plan that cannot be written cannot be shared.
 
+### Hosted static build
+
+The single-file build is published to GitHub Pages from this repo's `docs/`
+folder: **https://gnaidu05.github.io/workspace/campusroute.html**. That copy has
+no plan server, so plans stay in the visitor's own browser and shared links are
+unavailable; run the Node app for those.
+
+`npm run build:pages` rebuilds it and copies it into the repo's `docs/`.
+
 ### No server at all
 
 ```bash
