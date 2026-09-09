@@ -2,10 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/campusroute-probe",
-      "destination": "/api/probe"
-    },
-    {
       "source": "/campusroute",
       "destination": "/api/campusroute?path="
     },
