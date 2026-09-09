@@ -58,6 +58,17 @@ After a deploy, check `https://<host>/campusroute/api/health`:
 planner runs in local-draft mode and hides Publish; an `error` field appears if
 the variables are set but the database refused the connection.
 
+## Checking a deployment
+
+```bash
+node campusroute/deploy/vercel/check.mjs https://<host>/campusroute
+```
+
+It reads health, serves the page, then publishes a throwaway plan and walks the
+whole cycle — public read, edit-key unlock, refused write, saved write, stale
+conflict, invalid plan, delete — and cleans up after itself. With no plan store
+configured it reports that and stops after the page checks.
+
 ## Rebuilding the page
 
 `npm run build:single` in `campusroute/` regenerates
