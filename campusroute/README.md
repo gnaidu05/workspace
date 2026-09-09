@@ -55,13 +55,16 @@ a persistent disk) — a plan that cannot be written cannot be shared.
 ### No server at all
 
 ```bash
-npm run build:single      # -> docs/campusroute.html
+npm run build:single                       # -> docs/campusroute.html
+node scripts/build-single-file.js --artifact  # -> docs/campusroute-artifact.html
 ```
 
 One self-contained file: the whole planner, no modules, no API. Open it from
 disk or host it anywhere static (GitHub Pages, an intranet share). Plans then
 live only in the visitor's own browser storage — publishing and shared links are
-unavailable, everything else works.
+unavailable, everything else works. The `--artifact` variant is the same page
+without the `<html>`/`<head>` wrapper, for hosts that supply their own; there,
+file downloads are blocked by the host as well.
 
 ---
 

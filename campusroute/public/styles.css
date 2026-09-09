@@ -21,7 +21,7 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; } /* read-only mode hides controls with .hidden */
-body { margin: 0; }
+body { margin: 0; background: var(--ground); color: var(--ink); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; border: 0; background: none; color: inherit; }
 button:disabled { opacity: .5; cursor: default; }

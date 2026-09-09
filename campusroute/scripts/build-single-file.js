@@ -60,6 +60,11 @@ const aliasConsts = (names) =>
     .filter(Boolean)
     .join('\n');
 
+// The artifact host wraps the file in its own <!doctype>/<head>/<body>, so that
+// variant ships the same page without those wrappers, plus one line explaining
+// why publishing and campus search are unavailable there.
+const ARTIFACT = process.argv.includes('--artifact');
+
 const build = async () => {
   const parts = [];
   for (const file of MODULES) {
@@ -70,6 +75,42 @@ const build = async () => {
   const css = await readFile(path.join(PUBLIC, 'styles.css'), 'utf8');
   const favicon = await readFile(path.join(PUBLIC, 'favicon.svg'), 'utf8');
   const faviconUrl = 'data:image/svg+xml;base64,' + Buffer.from(favicon).toString('base64');
+
+  const banner = ARTIFACT
+    ? `<div id="artifact-note">Preview build · planning, editing and every view work here, and your plan is kept in this browser. Shared links, campus search, measured road times and file exports need the full app — run it from <code>campusroute/</code>.</div>`
+    : '';
+
+  const body = `<div id="app"><main class="boot"><h1>Team travel planner</h1><p>Loading the planner…</p></main></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<dialog id="editor"><div id="editor-content"></div></dialog>
+<input type="file" id="import-file" accept="application/json,.json,text/csv,.csv" hidden>`;
+
+  const script = `<script>
+"use strict";
+// CampusRoute, built as one file. Source: campusroute/public/*.js
+(function () {
+${parts.join('\n\n')}
+})();
+<\/script>`;
+
+  if (ARTIFACT) {
+    const page = `<title>CampusRoute Planner</title>
+<style>
+${css}
+#artifact-note { margin: 0; padding: 10px 32px; background: #14332c; color: #d6e8c8; font-size: .8125rem; line-height: 1.6; }
+#artifact-note code { background: #ffffff1f; padding: 1px 5px; border-radius: 4px; }
+@media (max-width: 720px) { #artifact-note { padding: 10px 18px; } }
+</style>
+${banner}
+${body}
+${script}
+`;
+    const artifactTarget = path.join(ROOT, 'docs', 'campusroute-artifact.html');
+    await mkdir(path.dirname(artifactTarget), { recursive: true });
+    await writeFile(artifactTarget, page, 'utf8');
+    console.log(`Wrote ${path.relative(ROOT, artifactTarget)} (${(page.length / 1024).toFixed(0)} KB)`);
+    return;
+  }
 
   const html = `<!doctype html>
 <html lang="en">
@@ -85,17 +126,8 @@ ${css}
 </style>
 </head>
 <body>
-<div id="app"><main class="boot"><h1>Team travel planner</h1><p>Loading the planner…</p></main></div>
-<div id="toast" role="status" aria-live="polite"></div>
-<dialog id="editor"><div id="editor-content"></div></dialog>
-<input type="file" id="import-file" accept="application/json,.json,text/csv,.csv" hidden>
-<script>
-"use strict";
-// CampusRoute, built as one file. Source: campusroute/public/*.js
-(function () {
-${parts.join('\n\n')}
-})();
-</script>
+${body}
+${script}
 </body>
 </html>
 `;
