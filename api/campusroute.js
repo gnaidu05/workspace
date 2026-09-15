@@ -19,24 +19,22 @@
 // — it stays in local-draft mode, and says so, instead of pretending it can
 // share.
 
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { createClient } from '@libsql/client';
+'use strict';
 
-import { validateState } from '../campusroute/public/engine.js';
+const { createHash, randomBytes, timingSafeEqual } = require('node:crypto');
+
+// One generated CommonJS file holds the built planner page and the validation
+// half of the engine (scripts/build-single-file.js --vercel in campusroute/), so
+// this function depends on nothing outside api/ — no cross-package ES modules
+// for the bundler to trace, and nothing to read off disk at all.
+const { PLANNER_PAGE, validateState } = require('./_campusroute-bundle.js');
 
 const MAX_PLAN_BYTES = 2_000_000;
 const MAX_PLANS = 5_000;
 const ID_ALPHABET = 'abcdefghijkmnopqrstuvwxyz23456789'; // no look-alikes
 const API_BASE = '/campusroute/api';
 
-// The built single-file planner. vercel.json includes it in this function's
-// bundle (`includeFiles`), so it is read once per cold start.
-const PLANNER_HTML = readFileSync(
-  path.join(process.cwd(), 'campusroute', 'docs', 'campusroute.html'),
-  'utf8',
-).replace(
+const PLANNER_HTML = PLANNER_PAGE.replace(
   '<body>',
   `<body>\n<script>window.CAMPUSROUTE_API_BASE=${JSON.stringify(API_BASE)};</script>`,
 );
@@ -62,17 +60,21 @@ function credentials() {
   return null;
 }
 
-function database() {
+// The libSQL client is imported on first use too, so a bundling problem with it
+// shows up as a reported error rather than a dead function.
+async function database() {
   if (client) return client;
   const config = credentials();
   if (!config) return null;
+  const { createClient } = require('@libsql/client');
   client = createClient({ url: config.url, authToken: config.authToken });
   return client;
 }
 
-// Additive, and safe to run on every cold start.
-function ready() {
-  const db = database();
+// Additive, and safe to run on every cold start. A failure is retried on the
+// next request rather than cached for the life of the instance.
+async function ready() {
+  const db = await database();
   if (!db) return null;
   if (!schemaReady) {
     schemaReady = db.execute(`CREATE TABLE IF NOT EXISTS campusroute_plans (
@@ -83,11 +85,12 @@ function ready() {
       created_at    TEXT NOT NULL,
       updated_at    TEXT NOT NULL
     )`).catch((error) => {
-      schemaReady = null; // let the next request try again
+      schemaReady = null;
       throw error;
     });
   }
-  return schemaReady.then(() => db);
+  await schemaReady;
+  return db;
 }
 
 // --- helpers ---------------------------------------------------------------
@@ -170,6 +173,8 @@ async function handleApi(req, res, segments) {
       ok: true,
       service: 'campusroute',
       db,
+      page: PLANNER_HTML.length > 1000,
+      engine: typeof validateState === 'function',
       credentials: config ? `${config.prefix}_DATABASE_URL` : null,
       ...(error ? { error } : {}),
     });
@@ -260,7 +265,7 @@ async function handleApi(req, res, segments) {
   return send(res, 404, { error: 'No such endpoint.' });
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // vercel.json passes the path under /campusroute as ?path=…; fall back to the
   // request URL so the function also works when called directly.
   const url = new URL(req.url, 'http://localhost');
@@ -295,3 +300,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+module.exports = handler;
