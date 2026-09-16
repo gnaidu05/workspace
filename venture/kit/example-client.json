@@ -1,0 +1,48 @@
+{
+  "_comment": "Copy this per client. Prices are USD. Dates are YYYY-MM-DD.",
+
+  "operator": {
+    "name": "{{YOUR_NAME}}",
+    "email": "{{YOUR_EMAIL}}",
+    "address": "{{YOUR_CITY}}, India",
+    "pan": "{{YOUR_PAN}}"
+  },
+
+  "client": {
+    "name": "Northwind Clinic LLC",
+    "email": "ops@northwind.example",
+    "address": "Portland, OR, USA"
+  },
+
+  "engagement": {
+    "package": "Build",
+    "price": 1500,
+    "startDate": "2026-09-28",
+    "estimatedHours": 20,
+    "hourCap": 30,
+    "overageRate": 90,
+    "deliverables": [
+      "A web tool replacing the staff rota spreadsheet, with per-user logins",
+      "Shift assignment with conflict detection across overlapping rotas",
+      "CSV export matching the format the payroll system expects",
+      "Deployed, with a one-page written guide"
+    ],
+    "exclusions": [
+      "Migrating historical rotas before January 2026",
+      "Integration with the payroll system's API",
+      "Mobile apps — the tool is a responsive web page"
+    ]
+  },
+
+  "invoice": {
+    "number": "INV-2026-001",
+    "issueDate": "2026-09-28",
+    "dueInDays": 14,
+    "taxRate": 0,
+    "notes": "Audit fee of $250 already paid has been deducted from the build price.",
+    "lineItems": [
+      { "description": "Build — staff rota tool (fixed price)", "unitPrice": 1500 },
+      { "description": "Less: audit fee already paid", "unitPrice": -250 }
+    ]
+  }
+}
