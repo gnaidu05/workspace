@@ -31,12 +31,19 @@ export function addDays(isoDate, days) {
   return d.toISOString().slice(0, 10);
 }
 
-/** Dollars (as written by a human) to integer cents. */
-export function toCents(dollars) {
+/**
+ * Dollars (as written by a human) to integer cents.
+ *
+ * Negatives are refused by default, because a negative price is almost always
+ * a typo. A credit line on an invoice is the exception and opts in explicitly.
+ */
+export function toCents(dollars, { allowNegative = false } = {}) {
   if (typeof dollars !== 'number' || !Number.isFinite(dollars)) {
     throw new TypeError(`amount must be a finite number, got ${JSON.stringify(dollars)}`);
   }
-  if (dollars < 0) throw new RangeError(`amount must not be negative, got ${dollars}`);
+  if (dollars < 0 && !allowNegative) {
+    throw new RangeError(`amount must not be negative, got ${dollars}`);
+  }
   const cents = Math.round(dollars * 100);
   // Guard against a price written with sub-cent precision silently rounding.
   if (Math.abs(dollars * 100 - cents) > 1e-6) {
@@ -93,7 +100,7 @@ export function invoice({
     if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity <= 0) {
       throw new RangeError(`lineItems[${i}].quantity must be > 0, got ${quantity}`);
     }
-    const unitCents = toCents(unitPrice);
+    const unitCents = toCents(unitPrice, { allowNegative: true });
     return {
       description: description.trim(),
       quantity,
@@ -103,6 +110,11 @@ export function invoice({
   });
 
   const subtotalCents = lines.reduce((sum, l) => sum + l.amountCents, 0);
+  if (subtotalCents < 0) {
+    throw new RangeError(
+      `invoice credits (${formatCents(subtotalCents)}) exceed its charges; issue a credit note instead`,
+    );
+  }
   const taxCents = Math.round(subtotalCents * taxRate);
 
   return {

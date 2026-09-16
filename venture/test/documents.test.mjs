@@ -215,3 +215,66 @@ test('SOW: overage rate is optional and reported as absent', () => {
   });
   assert.equal(sow.overageRateCents, null);
 });
+
+// -------------------------------------------------------- credits on invoices
+test('credit lines: a deducted audit fee reduces the total', () => {
+  const inv = invoice({
+    operator: OPERATOR,
+    client: CLIENT,
+    invoiceNumber: 'INV-020',
+    issueDate: '2026-09-28',
+    lineItems: [
+      { description: 'Build — staff rota tool', unitPrice: 1500 },
+      { description: 'Less: audit fee already paid', unitPrice: -250 },
+    ],
+  });
+  assert.equal(inv.lines[1].amountCents, -25000);
+  assert.equal(inv.subtotalCents, 125000);
+  assert.equal(formatCents(inv.totalCents), '$1,250.00');
+  // The stated property still holds with a credit in the mix.
+  assert.equal(
+    inv.lines.reduce((s, l) => s + l.amountCents, 0),
+    inv.subtotalCents,
+  );
+});
+
+test('credit lines: tax applies to the discounted subtotal, not the gross', () => {
+  const inv = invoice({
+    operator: OPERATOR,
+    client: CLIENT,
+    invoiceNumber: 'INV-021',
+    issueDate: '2026-09-28',
+    taxRate: 0.1,
+    lineItems: [
+      { description: 'Build', unitPrice: 1500 },
+      { description: 'Discount', unitPrice: -500 },
+    ],
+  });
+  assert.equal(inv.subtotalCents, 100000);
+  assert.equal(inv.taxCents, 10000); // 10% of 1000, not of 1500
+  assert.equal(inv.totalCents, 110000);
+});
+
+test('credit lines: an invoice that owes the client money is refused', () => {
+  assert.throws(
+    () =>
+      invoice({
+        operator: OPERATOR,
+        client: CLIENT,
+        invoiceNumber: 'INV-022',
+        issueDate: '2026-09-28',
+        lineItems: [
+          { description: 'Audit', unitPrice: 250 },
+          { description: 'Over-credit', unitPrice: -400 },
+        ],
+      }),
+    /credit note/,
+  );
+});
+
+test('toCents: negatives still rejected unless explicitly allowed', () => {
+  assert.throws(() => toCents(-250), RangeError);
+  assert.equal(toCents(-250, { allowNegative: true }), -25000);
+  // Sub-cent precision is refused either way.
+  assert.throws(() => toCents(-10.005, { allowNegative: true }), RangeError);
+});

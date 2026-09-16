@@ -7,11 +7,11 @@ than in a slide.
 - `model.mjs` — runway, unit economics, cash projection. Pure functions.
 - `india.mjs` — FX, payment rails, Section 44ADA, new-regime tax, thresholds.
 - `kit/documents.mjs` — invoices and scope letters as data transforms.
-- `kit/offer.html` — the sales page. Self-contained; hosts free on GitHub Pages.
-- `kit/outreach.md` — how client #1 is found, at zero cost.
-- `kit/case-study.md` — CampusRoute written up as proof.
+- `kit/` — the client pipeline, end to end. See `kit/README.md`:
+  the sales page, the outreach playbook, the audit method, and a generator
+  that turns one client JSON into a scope letter and an invoice.
 - `scenarios.mjs` — this venture's real numbers. `node scenarios.mjs`.
-- `test/` — 48 tests. `node --test 'test/*.test.mjs'`.
+- `test/` — 63 tests. `node --test 'test/*.test.mjs'`.
 
 Node 20+. No dependencies.
 

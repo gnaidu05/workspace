@@ -7,3 +7,7 @@ data.db
 .vercel
 .DS_Store
 npm-debug.log*
+
+# Generated client paperwork — real client data, never committed
+venture/kit/out/
+venture/kit/clients/
