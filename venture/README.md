@@ -7,6 +7,9 @@ than in a slide.
 - `model.mjs` — runway, unit economics, cash projection. Pure functions.
 - `india.mjs` — FX, payment rails, Section 44ADA, new-regime tax, thresholds.
 - `kit/documents.mjs` — invoices and scope letters as data transforms.
+- `kit/offer.html` — the sales page. Self-contained; hosts free on GitHub Pages.
+- `kit/outreach.md` — how client #1 is found, at zero cost.
+- `kit/case-study.md` — CampusRoute written up as proof.
 - `scenarios.mjs` — this venture's real numbers. `node scenarios.mjs`.
 - `test/` — 48 tests. `node --test 'test/*.test.mjs'`.
 
@@ -111,13 +114,42 @@ sometimes charged). Stripe is not the default here that it is in the US.
 The rail fee compounds: at $24,000/yr, 1% versus 5% is a difference of
 Rs 84,480 a year for no work.
 
-## 6. Operating rules
+## 6. The starting position
+
+**Rs 10,000, and living costs covered elsewhere.**
+
+That combination matters more than the number. Because nothing is drawing the
+balance down, burn is Rs 0/mo today and runway is *indefinite* — there is no
+clock forcing a bad decision. But Rs 10,000 cannot fund customer acquisition,
+and at this size a single subscription is a fuse:
+
+| Monthly spend | Runway |
+| --- | --- |
+| Rs 0 — free tiers (verified today) | **indefinite** |
+| Rs 500 — one domain | 14 months |
+| Rs 2,000 — one modest SaaS tool | **3.5 months** |
+| Rs 6,000 — a "growth stack" | 1.2 months |
+
+Against that, the first sale:
+
+| | |
+| --- | --- |
+| Starting balance | Rs 10,000 |
+| One Audit ($250) | **Rs 21,780** |
+| One Build ($1,500) | Rs 1,30,680 |
+| One Care client, a year | Rs 4,18,176 |
+
+**One Audit more than triples the balance.** Nothing purchasable for Rs 10,000
+comes close. So the plan is not to spend it — it is to sell. Every channel in
+`kit/outreach.md` is therefore free by design, and none of them is advertising.
+
+## 7. Operating rules
 
 Justified by the numbers, not by preference.
 
 1. **Free tiers until a client pays for infrastructure.** Verified current
    burn: **Rs 0/mo** — both live deployments are on free plans.
-2. **No paid acquisition until one Care client is retained.** A year of selling
+2. **No paid acquisition, at all, until a client is paying for it.** A year of selling
    nothing costs 3% of capital. A year of buying ads that sell nothing costs
    **57%**. Failing to sell is survivable; impatience is what destroys this.
 3. **Build is capped at 30 hours**, agreed in writing before work starts.
@@ -127,7 +159,7 @@ Justified by the numbers, not by preference.
 4. **Invoice in USD on a ~1% rail.** Keep every FIRC.
 5. **Price rises with proof, not with hope.**
 
-## 7. Honest base rates
+## 8. Honest base rates
 
 The literature here is dominated by content marketing with an incentive to
 inflate. The figures that survive that bias: 70% of micro-SaaS founders earn

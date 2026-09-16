@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spreadsheet to Tool</title>
+<meta name="description" content="Fixed-price builds that replace an overgrown spreadsheet with a small, tested web tool.">
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --border: #e4e0d8;
+    --ink: #1c1b19;
+    --ink-soft: #55524c;
+    --ink-faint: #85807a;
+    --accent: #1f5f4f;
+    --accent-soft: #e8f0ed;
+    --shadow: 0 1px 2px rgba(28, 27, 25, .05), 0 8px 24px rgba(28, 27, 25, .04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a;
+      --surface: #1b1e23;
+      --border: #2e333a;
+      --ink: #f0eee9;
+      --ink-soft: #b3aea6;
+      --ink-faint: #837e77;
+      --accent: #6fd3b3;
+      --accent-soft: #1b2f2a;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a;
+    --surface: #1b1e23;
+    --border: #2e333a;
+    --ink: #f0eee9;
+    --ink-soft: #b3aea6;
+    --ink-faint: #837e77;
+    --accent: #6fd3b3;
+    --accent-soft: #1b2f2a;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-feature-settings: "kern", "liga";
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+  section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  section:last-of-type { border-bottom: 0; }
+
+  h1, h2, h3 { line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 .5em; }
+  h1 { font-size: clamp(1.9rem, 5.5vw, 2.9rem); }
+  h2 { font-size: clamp(1.3rem, 3.5vw, 1.6rem); }
+  h3 { font-size: 1.05rem; letter-spacing: -0.01em; }
+  p { margin: 0 0 1em; color: var(--ink-soft); }
+  .lede { font-size: clamp(1.05rem, 2.5vw, 1.2rem); color: var(--ink-soft); max-width: 58ch; }
+  strong { color: var(--ink); font-weight: 600; }
+
+  header { padding: 72px 0 8px; }
+  .eyebrow {
+    font-size: .78rem; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--accent); font-weight: 650; margin-bottom: 14px;
+  }
+
+  ul.plain { list-style: none; padding: 0; margin: 0 0 1em; }
+  ul.plain li {
+    position: relative; padding-left: 1.4em; margin-bottom: .55em; color: var(--ink-soft);
+  }
+  ul.plain li::before {
+    content: ""; position: absolute; left: .3em; top: .62em;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+  }
+  .quotes li { font-style: italic; }
+
+  .cards { display: grid; gap: 16px; grid-template-columns: 1fr; margin-top: 28px; }
+  @media (min-width: 720px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column;
+  }
+  .card.featured { border-color: var(--accent); }
+  .card .tag {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .09em;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 3px 8px; border-radius: 99px; align-self: flex-start; margin-bottom: 12px;
+    font-weight: 650;
+  }
+  .price { font-size: 1.9rem; font-weight: 680; letter-spacing: -0.03em; color: var(--ink); }
+  .price span { font-size: .95rem; font-weight: 500; color: var(--ink-faint); }
+  .card p { font-size: .93rem; margin: .5em 0 1em; }
+  .card ul.plain { font-size: .9rem; margin-top: auto; }
+
+  .proof {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; box-shadow: var(--shadow);
+  }
+  .stats { display: flex; flex-wrap: wrap; gap: 28px; margin: 20px 0 0; padding: 0; list-style: none; }
+  .stats div { min-width: 90px; }
+  .stats .n { font-size: 1.5rem; font-weight: 680; letter-spacing: -0.02em; display: block; }
+  .stats .l { font-size: .82rem; color: var(--ink-faint); }
+
+  ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; }
+  ol.steps li {
+    counter-increment: s; position: relative; padding-left: 44px; margin-bottom: 22px;
+  }
+  ol.steps li::before {
+    content: counter(s); position: absolute; left: 0; top: -1px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: .85rem; font-weight: 680;
+    display: grid; place-items: center;
+  }
+  ol.steps p { margin: .15em 0 0; font-size: .95rem; }
+
+  .faq dt { font-weight: 620; margin-top: 20px; }
+  .faq dd { margin: .35em 0 0; color: var(--ink-soft); }
+
+  a { color: var(--accent); text-underline-offset: 2px; }
+  .cta {
+    display: inline-block; background: var(--accent); color: var(--bg);
+    padding: 13px 26px; border-radius: 9px; text-decoration: none;
+    font-weight: 620; margin-top: 8px;
+  }
+
+  footer { padding: 40px 0 64px; color: var(--ink-faint); font-size: .88rem; }
+  .fill { background: var(--accent-soft); color: var(--accent); padding: 0 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Fixed price · Fixed scope</div>
+    <h1>Your spreadsheet outgrew itself.</h1>
+    <p class="lede">
+      I replace overgrown spreadsheets with small, tested web tools — built in
+      weeks, priced up front, and handed over with the source. No retainer
+      required, no platform to get locked into.
+    </p>
+    <a class="cta" href="mailto:{{YOUR_EMAIL}}">Book a $250 audit</a>
+  </header>
+
+  <section>
+    <h2>You probably recognise at least one of these</h2>
+    <ul class="plain quotes">
+      <li>“It has forty tabs and I'm scared to touch it.”</li>
+      <li>“Three of us edit it and we keep overwriting each other.”</li>
+      <li>“Someone has to remember to copy it into the other system every Friday.”</li>
+      <li>“The macro broke and the person who wrote it left.”</li>
+      <li>“I need it to email someone when a number changes.”</li>
+    </ul>
+    <p>
+      None of these are spreadsheet problems. They're signs a spreadsheet is
+      being asked to be software — to have users, permissions, history and
+      rules. <strong>That's the point where a small, purpose-built tool costs
+      less than continuing to patch the sheet.</strong>
+    </p>
+  </section>
+
+  <section>
+    <h2>What it costs</h2>
+    <p>Priced before any work starts. No hourly billing, no surprises.</p>
+
+    <div class="cards">
+      <div class="card">
+        <span class="tag">Start here</span>
+        <div class="price">$250</div>
+        <p>A written assessment of your process: what's brittle, what's worth
+          automating, and what a build would cost.</p>
+        <ul class="plain">
+          <li>Turned around in a week</li>
+          <li>Yours to keep and act on</li>
+          <li>Deducted from the build price</li>
+          <li>No obligation to continue</li>
+        </ul>
+      </div>
+
+      <div class="card featured">
+        <span class="tag">The build</span>
+        <div class="price">$1,500</div>
+        <p>One workflow replaced with a real, tested web tool. Roughly 20
+          hours of work, <strong>capped at 30</strong>.</p>
+        <ul class="plain">
+          <li>Scope agreed in writing first</li>
+          <li>Deployed and working</li>
+          <li>Source code handed over</li>
+          <li>The cap is contractual</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="tag">Optional</span>
+        <div class="price">$400<span>/mo</span></div>
+        <p>Hosting, changes and support once it's live. Entirely optional —
+          plenty of clients don't take it.</p>
+        <ul class="plain">
+          <li>Cancel any time</li>
+          <li>Changes included</li>
+          <li>Monitoring and backups</li>
+          <li>No lock-in: you hold the source</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The standard of work</h2>
+    <div class="proof">
+      <h3>CampusRoute — a multi-stop travel planner</h3>
+      <p>
+        Groups fixed-date visits into shared tours, works out road, air and rail
+        travel around them, counts overnight stays, assigns named people, and
+        shows what the grouping saves against one trip per visit.
+      </p>
+      <div class="stats">
+        <div><span class="n">0</span><span class="l">dependencies</span></div>
+        <div><span class="n">45</span><span class="l">tests</span></div>
+        <div><span class="n">3</span><span class="l">deploy targets</span></div>
+      </div>
+      <p style="margin-top:20px">
+        Zero dependencies means nothing to patch and no framework migration in
+        eighteen months — it will run in five years the way it runs today. The
+        tests mean the next change won't quietly break the last one.
+        <a href="https://campusroute-planner.higgsfield.app/planner">See it running</a> ·
+        <a href="https://github.com/gnaidu05/workspace/tree/main/campusroute">read the source</a>.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it runs</h2>
+    <ol class="steps">
+      <li><h3>Audit</h3><p>I go through your current process and write up what's
+        brittle, what to automate, and what it would cost. One week. $250.</p></li>
+      <li><h3>Scope</h3><p>If you go ahead, we agree in writing exactly what gets
+        built — and the hour cap — before any work starts.</p></li>
+      <li><h3>Build</h3><p>You see it working while it's built, not at the end.
+        Two to three weeks for a typical tool.</p></li>
+      <li><h3>Handover</h3><p>Deployed, documented, source in your hands. Take the
+        support plan or don't — it works either way.</p></li>
+    </ol>
+  </section>
+
+  <section class="faq">
+    <h2>Fair questions</h2>
+    <dl>
+      <dt>What if it takes longer than you thought?</dt>
+      <dd>That's my problem, not yours. The price is fixed and the hours are
+        capped in writing. If the scope itself changes, we agree a new one
+        before anything proceeds.</dd>
+
+      <dt>What happens if you disappear?</dt>
+      <dd>You hold the source and it has no dependencies, so any competent
+        developer can pick it up. That's a deliberate design choice, and it's
+        the main reason I don't build on a proprietary platform.</dd>
+
+      <dt>Can't I just use Airtable or a no-code tool?</dt>
+      <dd>Often, yes — and if the audit concludes that, I'll tell you so and
+        you'll have spent $250 to avoid spending $1,500. That happens and it's a
+        perfectly good outcome.</dd>
+
+      <dt>Where are you based?</dt>
+      <dd>India. I work with clients across the US, UK, Europe and Australia,
+        invoice in USD, and overlap with your working day for calls.</dd>
+    </dl>
+  </section>
+
+  <section>
+    <h2>Start with the audit</h2>
+    <p class="lede">
+      $250, one week, and a written assessment you keep whether or not you build
+      anything with me.
+    </p>
+    <a class="cta" href="mailto:{{YOUR_EMAIL}}">Email me</a>
+  </section>
+
+  <footer>
+    <p>
+      <span class="fill">{{YOUR_NAME}}</span> ·
+      <span class="fill">{{YOUR_EMAIL}}</span> ·
+      replace both, and the two <span class="fill">mailto:</span> links above,
+      before publishing.
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

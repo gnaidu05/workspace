@@ -78,63 +78,52 @@ for (const clients of [1, 3, 5, 6, 10]) {
 console.log('\n  5 Care clients clears Rs 20L a year with zero income tax.');
 console.log('  That is the target. Not 50 clients, not a product launch. Five.');
 
-hr('5. Runway — and the question the balance depends on');
-console.log('  "10K" is ambiguous and the two readings are not close:\n');
-for (const [label, balance, floor] of [
-  ['Rs 10,000', 10000, 3000],
-  ['$10,000 (Rs 8.8L)', 10000 * FX, 300000],
+hr('5. Runway on a Rs 10,000 war chest');
+const BALANCE = 10000;
+const FLOOR = 3000; // keep Rs 3,000 back; zero is already too late
+console.log('  Living costs are covered elsewhere, so this is not a survival clock.');
+console.log('  It is a war chest that cannot fund customer acquisition.\n');
+for (const [what, burn] of [
+  ['free tiers only (verified today)', 0],
+  ['one domain name', 500],
+  ['one modest SaaS subscription', 2000],
+  ['a "growth stack" of tools', 6000],
 ]) {
-  console.log(`  ${label}:`);
-  for (const burn of [0, 2000, 10000]) {
-    const m = monthsOfRunway({ balance, monthlyBurn: burn, floor });
-    console.log(
-      `      burn ${inr(burn).padStart(10)}/mo -> ${
-        m === Infinity ? 'indefinite' : `${m.toFixed(1)} months`
-      }`,
-    );
-  }
-}
-
-hr('6. Spend discipline still decides it');
-console.log('  Surviving twelve months is a low bar. Watch the capital column.');
-const scenarios = [
-  {
-    label: 'A. Nothing sells all year, free tiers only',
-    opts: { monthlyBurn: 2000 },
-  },
-  {
-    label: 'B. One Build a month, half convert to Care',
-    opts: {
-      monthlyBurn: 2000,
-      projectsPerMonth: 1,
-      projectPrice: 1500 * FX * (1 - RAIL_FEE),
-      newRetainersPerMonth: 0.5,
-      retainerPrice: 400 * FX * (1 - RAIL_FEE),
-      monthlyChurnRate: 0.05,
-    },
-  },
-  {
-    label: 'C. Rs 40,000/mo on ads and tools, nothing sells',
-    opts: { monthlyBurn: 42000 },
-  },
-];
-for (const s of scenarios) {
-  const r = project({ openingBalance: 10000 * FX, months: 12, floor: 300000, ...s.opts });
-  const opening = 10000 * FX;
-  const burned = opening - r.endingBalance;
-  const burnedPct = (burned / opening) * 100;
-  console.log(`\n  ${s.label}`);
+  const m = monthsOfRunway({ balance: BALANCE, monthlyBurn: burn, floor: FLOOR });
   console.log(
-    `     ${(r.survives ? 'survives' : `RUIN in month ${r.ruinMonth}`).padEnd(18)}` +
-      ` ending ${inr(r.endingBalance).padStart(14)}` +
-      `   break-even ${r.breakEvenMonth ? `month ${r.breakEvenMonth}` : 'never'}`,
-  );
-  console.log(
-    `     ${''.padEnd(18)} capital ${
-      burned > 0 ? `DESTROYED ${inr(burned)} (${burnedPct.toFixed(0)}%)` : 'grown'
+    `  ${inr(burn).padStart(9)}/mo  ${what.padEnd(34)} -> ${
+      m === Infinity ? 'indefinite' : `${m.toFixed(1)} months`
     }`,
   );
 }
+console.log('\n  At this balance a single Rs 2,000/mo subscription is a 3.5-month fuse.');
+console.log('  Every tool must be free until a client is paying for it.');
+
+hr('6. What one sale does');
+console.log('  The Audit is priced at $250. Converted, that is more than twice');
+console.log('  the entire starting balance:\n');
+const auditINR = 250 * FX * (1 - RAIL_FEE);
+console.log(`    starting balance      ${inr(BALANCE).padStart(12)}`);
+console.log(`    one Audit             ${inr(auditINR).padStart(12)}`);
+console.log(`    after one Audit       ${inr(BALANCE + auditINR).padStart(12)}  (${((BALANCE + auditINR) / BALANCE).toFixed(1)}x)`);
+console.log(`    one Build             ${inr(1500 * FX * (1 - RAIL_FEE)).padStart(12)}`);
+console.log(`    one Care client/yr    ${inr(400 * 12 * FX * (1 - RAIL_FEE)).padStart(12)}`);
+console.log('\n  Nothing that can be bought with Rs 10,000 moves the needle like');
+console.log('  the first sale does. So the plan is not to spend it. It is to sell.');
+
+const twelve = project({
+  openingBalance: BALANCE,
+  months: 12,
+  monthlyBurn: 0,
+  floor: FLOOR,
+  projectsPerMonth: 0.5,
+  projectPrice: 1500 * FX * (1 - RAIL_FEE),
+  newRetainersPerMonth: 0.25,
+  retainerPrice: 400 * FX * (1 - RAIL_FEE),
+  monthlyChurnRate: 0.05,
+});
+console.log(`\n  A modest year (one Build every two months, half converting to Care):`);
+console.log(`     ends at ${inr(twelve.endingBalance)}, break-even month ${twelve.breakEvenMonth}`);
 
 hr('7. Break-even');
 const be = breakEvenClients({
